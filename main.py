@@ -3,6 +3,7 @@ import secrets
 import json
 import hashlib
 import re
+import time
 import uuid
 import urllib.error
 import urllib.request
@@ -184,7 +185,13 @@ def login(
             session.add(user)
             session.commit()
         audit(session, "login_failed", detail=email, user_id=user.id if user else None, request=request)
-        return fail("Email or password is wrong.")
+        if not user:
+            return fail("No account found for this email. Please sign up first.")
+        if not user.is_active:
+            return fail("This account has been deactivated. Please contact the admin.")
+        if user.locked_until and user.locked_until > utcnow():
+            return fail(f"Too many failed attempts. Try again in {LOCK_MINUTES} minutes.")
+        return fail("Incorrect password. Please try again.")
 
     user.failed_logins = 0
     user.locked_until = None
@@ -315,12 +322,33 @@ TAROT_SPREADS = {
 }
 
 
-def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) -> str:
-    """Call Gemini or an OpenAI Responses-compatible API on the server."""
-    api_key = configured_ai_key()
-    if not api_key:
-        raise RuntimeError("No AI API key is configured")
-    if "generativelanguage.googleapis.com" in OPENAI_BASE_URL:
+RETRYABLE_HTTP = {429, 500, 502, 503, 504}
+GEMINI_FALLBACK_MODELS = ["gemini-3.1-flash-lite", "gemini-2.5-flash"]
+
+
+def ai_models_to_try() -> list[str]:
+    """Primary model first, then fallbacks (env OPENAI_FALLBACK_MODELS, comma-separated)."""
+    extra = os.getenv("OPENAI_FALLBACK_MODELS")
+    if extra is not None:
+        fallbacks = [m.strip() for m in extra.split(",") if m.strip()]
+    elif "generativelanguage.googleapis.com" in OPENAI_BASE_URL:
+        fallbacks = GEMINI_FALLBACK_MODELS
+    else:
+        fallbacks = []
+    models = []
+    for model in [OPENAI_MODEL, *fallbacks]:
+        if model and model not in models:
+            models.append(model)
+    return models
+
+
+class RetryableAIError(RuntimeError):
+    pass
+
+
+def _call_ai_once(model: str, api_key: str, instructions: str, prompt: str, max_output_tokens: int) -> str:
+    is_gemini = "generativelanguage.googleapis.com" in OPENAI_BASE_URL
+    if is_gemini:
         request_payload = {
             "systemInstruction": {"parts": [{"text": instructions}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -329,11 +357,11 @@ def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) ->
                 "responseMimeType": "application/json",
             },
         }
-        endpoint = f"{OPENAI_BASE_URL}/models/{OPENAI_MODEL}:generateContent"
+        endpoint = f"{OPENAI_BASE_URL}/models/{model}:generateContent"
         headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     else:
         request_payload = {
-            "model": OPENAI_MODEL,
+            "model": model,
             "instructions": instructions,
             "input": prompt,
             "max_output_tokens": max_output_tokens,
@@ -343,15 +371,14 @@ def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) ->
             request_payload["store"] = False
         endpoint = f"{OPENAI_BASE_URL}/responses"
         headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    payload = json.dumps(request_payload).encode("utf-8")
     req = urllib.request.Request(
         endpoint,
-        data=payload,
+        data=json.dumps(request_payload).encode("utf-8"),
         headers=headers,
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=90) as response:
+        with urllib.request.urlopen(req, timeout=45) as response:
             data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         try:
@@ -360,10 +387,16 @@ def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) ->
             detail = provider_error.get("message") or provider_error.get("code") or "request rejected"
         except (json.JSONDecodeError, AttributeError):
             detail = "request rejected"
-        raise RuntimeError(f"AI provider returned HTTP {exc.code}: {str(detail)[:240]}") from exc
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"AI provider connection/response error: {str(exc.reason if isinstance(exc, urllib.error.URLError) else exc)[:180]}") from exc
-    if "generativelanguage.googleapis.com" in OPENAI_BASE_URL:
+        message = f"AI provider returned HTTP {exc.code} ({model}): {str(detail)[:200]}"
+        if exc.code in RETRYABLE_HTTP:
+            raise RetryableAIError(message) from exc
+        raise RuntimeError(message) from exc
+    except (urllib.error.URLError, TimeoutError) as exc:
+        reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+        raise RetryableAIError(f"AI provider connection error ({model}): {str(reason)[:160]}") from exc
+    except json.JSONDecodeError as exc:
+        raise RetryableAIError(f"AI provider sent an unreadable response ({model})") from exc
+    if is_gemini:
         output_text = "\n".join(
             part.get("text", "")
             for candidate in data.get("candidates", [])
@@ -379,8 +412,31 @@ def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) ->
     ]
     result = str(output_text).strip() or "\n".join(part for part in text_parts if part).strip()
     if not result:
-        raise RuntimeError("AI provider returned an empty response")
+        raise RetryableAIError(f"AI provider returned an empty response ({model})")
     return result
+
+
+def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) -> str:
+    """Call Gemini or an OpenAI Responses-compatible API on the server.
+
+    Busy/overloaded responses (429/5xx, timeouts) are retried once and then the
+    request moves on to the fallback models, so a temporary spike on one model
+    does not break the report.
+    """
+    api_key = configured_ai_key()
+    if not api_key:
+        raise RuntimeError("No AI API key is configured")
+    last_error: Exception | None = None
+    for model in ai_models_to_try():
+        for attempt in range(2):
+            try:
+                return _call_ai_once(model, api_key, instructions, prompt, max_output_tokens)
+            except RetryableAIError as exc:
+                last_error = exc
+                print(f"AI call retryable failure: {exc}")
+                if attempt == 0:
+                    time.sleep(1.5)
+    raise RuntimeError(str(last_error) if last_error else "AI provider unavailable")
 
 
 def tarot_card_context(draws):
