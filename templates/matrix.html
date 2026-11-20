@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Destiny Matrix · Lumora{% endblock %}
 {% block content %}
+{% set default_date = user.birth_date.isoformat() if user.birth_date else '' %}
+{% set personal_date = result.date.isoformat() if result else (form_birth_date or (compatibility.first.date if compatibility else default_date)) %}
 <a class="back-link" href="/dashboard">← Dashboard</a>
 <p class="eyebrow">NUMEROLOGY FOR REFLECTION</p>
 <h1>Destiny Matrix</h1>
@@ -19,7 +21,8 @@
   <p class="muted">Enter a birth date to reveal your core numbers and Arcana for reflection.</p>
   <form class="compact-form matrix-date-form" method="post" action="/matrix">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <label for="birth_date">Date of birth</label><input id="birth_date" type="date" name="birth_date" required>
+    {% if compatibility %}<input type="hidden" name="compatibility_id" value="{{ request.query_params.get('compatibility_id', '') }}">{% endif %}
+    <label for="birth_date">Date of birth</label><input id="birth_date" type="date" name="birth_date" value="{{ personal_date }}" required>
     <button class="btn">Calculate my chart</button>
   </form>
   {% if result %}
@@ -34,8 +37,9 @@
   <p class="muted">Compare two birth dates to explore shared numbers, each person's center number, and relationship themes for reflection.</p>
   <form class="compatibility-form" method="post" action="/matrix/compatibility">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <label>Your date of birth<input type="date" name="birth_date" required></label>
-    <label>Partner's or other person's date of birth<input type="date" name="partner_birth_date" required></label>
+    {% if result %}<input type="hidden" name="reading_id" value="{{ result.id }}">{% endif %}
+    <label>Your date of birth<input type="date" name="birth_date" value="{{ compatibility.first.date if compatibility else (form_birth_date or personal_date) }}" required></label>
+    <label>Partner's or other person's date of birth<input type="date" name="partner_birth_date" value="{{ compatibility.second.date if compatibility else (form_partner_birth_date or '') }}" required></label>
     <button class="btn">Generate compatibility chart</button>
   </form>
   {% if compatibility %}

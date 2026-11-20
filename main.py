@@ -779,23 +779,26 @@ def matrix_reading_view(session: Session, reading_id: int, unlocked: bool):
 
 
 @app.post("/matrix", dependencies=[Depends(verify_csrf)])
-def matrix_calculate(request: Request, birth_date: str = Form(""), user=Depends(require_user), session: Session = Depends(get_session)):
+def matrix_calculate(request: Request, birth_date: str = Form(""), compatibility_id: str = Form(""), user=Depends(require_user), session: Session = Depends(get_session)):
     try:
         born = date.fromisoformat(birth_date)
         if born > date.today() or born.year < 1900: raise ValueError
     except ValueError:
-        return render(request, "matrix.html", status_code=400, user=user, result=None, error="Enter a valid birth date between 1900 and today.", page_lang="en")
+        return render(request, "matrix.html", status_code=400, user=user, result=None, compatibility=None,
+                      error="Enter a valid birth date between 1900 and today.", page_lang="en",
+                      form_birth_date=birth_date)
     numbers = matrix_profile(born)["numbers"]
     reading = Reading(user_id=user.id, type="matrix", title=f"Destiny Matrix - {born.isoformat()}")
     session.add(reading); session.flush()
     session.add(MatrixReading(reading_id=reading.id, birth_date=born, day_num=numbers["day"], month_num=numbers["month"], year_num=numbers["year"], sum_num=numbers["sum"], center_num=numbers["center"]))
     session.commit()
-    result = matrix_reading_view(session, reading.id, False)
-    return render(request, "matrix.html", user=user, result=result, compatibility=None, error=None, page_lang="en")
+    keep = f"&compatibility_id={compatibility_id}" if compatibility_id.isdigit() else ""
+    return RedirectResponse(f"/matrix?reading_id={reading.id}{keep}#personal-chart", status_code=303)
 
 
 @app.post("/matrix/compatibility", dependencies=[Depends(verify_csrf)])
 def matrix_compatibility(request: Request, birth_date: str = Form(""), partner_birth_date: str = Form(""),
+                         reading_id: str = Form(""),
                          user=Depends(require_user), session: Session = Depends(get_session)):
     try:
         first_date, second_date = date.fromisoformat(birth_date), date.fromisoformat(partner_birth_date)
@@ -803,7 +806,8 @@ def matrix_compatibility(request: Request, birth_date: str = Form(""), partner_b
             raise ValueError
     except ValueError:
         return render(request, "matrix.html", status_code=400, user=user, result=None, compatibility=None,
-                      error="Enter two valid birth dates between 1900 and today.", page_lang="en")
+                      error="Enter two valid birth dates between 1900 and today.", page_lang="en",
+                      form_birth_date=birth_date, form_partner_birth_date=partner_birth_date)
     first, second = matrix_profile(first_date), matrix_profile(second_date)
     shared = sorted(set(first["numbers"].values()) & set(second["numbers"].values()))
     closeness = max(0, 10 - abs(first["numbers"]["center"] - second["numbers"]["center"]))
@@ -829,7 +833,8 @@ def matrix_compatibility(request: Request, birth_date: str = Form(""), partner_b
                     result_json=json.dumps(compatibility, ensure_ascii=False))
     session.add(saved)
     session.commit()
-    return RedirectResponse(f"/matrix?compatibility_id={saved.id}", status_code=303)
+    keep = f"&reading_id={reading_id}" if reading_id.isdigit() else ""
+    return RedirectResponse(f"/matrix?compatibility_id={saved.id}{keep}#compatibility-reading", status_code=303)
 
 
 @app.post("/matrix/{reading_id}/unlock", dependencies=[Depends(verify_csrf)])
@@ -856,7 +861,7 @@ def zodiac_calculate(request: Request, birth_date: str = Form(""), kua_formula: 
         born = date.fromisoformat(birth_date)
         if born > date.today() or born.year < 1900: raise ValueError
     except ValueError:
-        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Enter a valid birth date.", kua_formula=kua_formula, page_lang="en")
+        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Enter a valid birth date.", kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
     if kua_formula not in {"male", "female", "both"}:
         kua_formula = "both"
     signs = session.exec(select(ZodiacSign)).all()
@@ -866,16 +871,16 @@ def zodiac_calculate(request: Request, birth_date: str = Form(""), kua_formula: 
         sign = next((s for s in signs if s.start_month > s.end_month and ((born.month, born.day) >= (s.start_month, s.start_day) or (born.month, born.day) <= (s.end_month, s.end_day))), None)
     year_mark = session.get(ImlekDate, born.year)
     if not year_mark or born.year - 1 not in [r.year for r in session.exec(select(ImlekDate)).all()]:
-        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Lunar calendar data is unavailable for this birth year.", kua_formula=kua_formula, page_lang="en")
+        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Lunar calendar data is unavailable for this birth year.", kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
     shio_year = born.year if born >= year_mark.new_year_date else born.year - 1
     shio = session.exec(select(ShioAnimal).where(ShioAnimal.cycle_index == ((shio_year - 2020) % 12))).first()
     if not sign or not shio:
-        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Zodiac or Chinese Zodiac data is unavailable.", kua_formula=kua_formula, page_lang="en")
+        return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Zodiac or Chinese Zodiac data is unavailable.", kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
     reading = Reading(user_id=user.id, type="zodiac", title=f"Zodiac & Chinese Zodiac - {born.isoformat()}", result_json=json.dumps({"kua_formula": kua_formula}))
     session.add(reading); session.flush()
     session.add(ZodiacReading(reading_id=reading.id, birth_date=born, zodiac_id=sign.id, shio_id=shio.id)); session.commit()
     result = make_zodiac_result(born, sign, shio, shio_year, kua_formula)
-    return render(request, "zodiac.html", user=user, result=result, error=None, kua_formula=kua_formula, page_lang="en")
+    return render(request, "zodiac.html", user=user, result=result, error=None, kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
 
 
 # ---------- orders & local sandbox checkout ----------

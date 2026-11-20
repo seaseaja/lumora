@@ -8,7 +8,7 @@
 <form class="card compact-form" method="post" action="/zodiac">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <label for="birth_date">Date of birth</label>
-  <input id="birth_date" type="date" name="birth_date" required>
+  <input id="birth_date" type="date" name="birth_date" value="{{ birth_date or (user.birth_date.isoformat() if user.birth_date else '') }}" required>
   <label for="kua_formula">Eight Mansions calculation</label>
   <select id="kua_formula" name="kua_formula">
     <option value="both" {% if kua_formula == 'both' %}selected{% endif %}>Show both traditional formulas</option>
