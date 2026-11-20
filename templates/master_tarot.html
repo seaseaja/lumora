@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Master: Tarot Cards{% endblock %}
+{% block content %}
+<h1>Master Data: Tarot Cards</h1>
+<p class="muted">Admin only. Reference data used by the tarot reading.</p>
+<div class="split">
+  <div class="card grow">
+    <table>
+      <thead><tr><th>Card</th><th>Suit</th><th>Upright</th><th>Reversed</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for c in cards %}
+        <tr>
+          <td>{{ c.name }}</td><td>{{ c.suit }}</td><td>{{ c.upright }}</td><td>{{ c.reversed_meaning }}</td>
+          <td class="actions">
+            <a href="/master/tarot?edit={{ c.id }}">Edit</a>
+            <form method="post" action="/master/tarot/{{ c.id }}/delete" onsubmit="return confirm('Delete this card?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <button class="link-danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">No cards yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card side">
+    <h2>{{ 'Edit card' if item and item.id else 'Add card' }}</h2>
+    <form method="post" action="/master/tarot/save">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="card_id" value="{{ item.id if item else '' }}">
+      <label for="name">Card name</label>
+      <input id="name" name="name" maxlength="100" required value="{{ item.name if item else '' }}">
+      <label for="suit">Suit</label>
+      <select id="suit" name="suit">
+        {% for s in suits %}<option {{ 'selected' if item and item.suit == s }}>{{ s }}</option>{% endfor %}
+      </select>
+      <label for="upright">Upright meaning</label>
+      <textarea id="upright" name="upright" rows="3" maxlength="300" required>{{ item.upright if item else '' }}</textarea>
+      <label for="reversed_meaning">Reversed meaning</label>
+      <textarea id="reversed_meaning" name="reversed_meaning" rows="3" maxlength="300" required>{{ item.reversed_meaning if item else '' }}</textarea>
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn-ghost" href="/master/tarot">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

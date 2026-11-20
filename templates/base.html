@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="{{ page_lang|default('en') }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Lumora{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX" crossorigin="anonymous">
+<link rel="stylesheet" href="/static/style.css?v=20261120-chat-retry-button">
+<link rel="stylesheet" href="/static/motion.css?v=20261120-global-motion">
+</head>
+<body>
+{% if user %}
+<div class="app-shell">
+  <header class="mobile-topbar">
+    <a class="brand" href="/dashboard">Lumora</a>
+    <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainSidebar" aria-controls="mainSidebar" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+  </header>
+  <aside class="sidebar offcanvas-lg offcanvas-start" id="mainSidebar" tabindex="-1" aria-labelledby="sidebarTitle">
+    <div class="offcanvas-header d-lg-none"><h2 class="offcanvas-title" id="sidebarTitle">Menu</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button></div>
+    <a class="brand" href="/dashboard">Lumora</a>
+    <p class="side-label">MENU</p>
+    <a class="side-link" href="/dashboard">Dashboard</a>
+    <p class="side-label">HISTORY</p>
+    <a class="side-link" href="/reports">My Readings</a>
+    <a class="side-link" href="/orders">Payment History</a>
+    {% if user.role == 'admin' %}<p class="side-label">MASTER</p><a class="side-link" href="/master/tarot">Master Data</a>{% endif %}
+    <p class="side-label">ACCOUNT</p>
+    <a class="side-link" href="/profile">Profile</a>
+    <form method="post" action="/logout" class="side-logout"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button type="submit">Log out</button></form>
+    <a class="side-user" href="/profile">{% if user.avatar_url %}<img class="avatar" src="{{ user.avatar_url }}" alt="">{% else %}<span class="avatar">{{ user.name[:1]|upper }}</span>{% endif %}<span><b>{{ user.name }}</b><small>View profile</small></span></a>
+  </aside>
+  <div class="main-column">
+{% endif %}
+<main class="wrap">
+  {% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
+  {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+  {% if not user %}<div class="auth-layout"><section class="auth-hero">
+<a class="brand" href="/login">Lumora</a>
+<div class="auth-hero-copy">
+<p class="eyebrow">A LITTLE CLARITY, YOUR WAY</p>
+<h1>Stop overthinking.<br>Let’s analyze.</h1>
+<p>Explore patterns and possibilities.</p>
+</div>
+<div class="lumora-illustration" aria-hidden="true">
+  <div class="illustration-tile illustration-chat"><svg viewBox="0 0 48 48"><path d="M10 11.5h28a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H23l-9 6v-6h-4a4 4 0 0 1-4-4v-16a4 4 0 0 1 4-4Z"/><path d="M14 21h20M14 27h13"/></svg><i></i><i></i></div>
+  <div class="illustration-tile illustration-tarot"><span class="tarot-frame"><svg viewBox="0 0 64 80"><path d="M32 13 37 27 51 32 37 37 32 51 27 37 13 32 27 27 32 13Z"/><circle cx="32" cy="32" r="24"/></svg></span></div>
+  <div class="illustration-tile illustration-stars"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22"/><ellipse cx="32" cy="32" rx="10" ry="22"/><path d="M10 32h44M17 17l30 30M47 17 17 47"/><circle cx="47" cy="17" r="3"/><circle cx="17" cy="47" r="3"/></svg></div>
+</div>
+</section><div class="auth-panel">{% endif %}
+  {% block content %}{% endblock %}
+  {% if not user %}</div></div>{% endif %}
+</main>
+{% if user %}</div></div>{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/js/bootstrap.bundle.min.js" integrity="sha384-WyOxWvTyr1QaMPfiPJSv76iReVthorl5uWlFtZPyK0IEB0hGzo9y5Bp9mYanr8Bu" crossorigin="anonymous"></script>
+<script src="/static/motion.js?v=20261120-global-motion" defer></script>
+</body>
+</html>

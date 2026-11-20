@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Zodiac & Chinese Zodiac · Lumora{% endblock %}
+{% block content %}
+<a class="back-link" href="/dashboard">← Dashboard</a>
+<p class="eyebrow">BIRTH CHART</p>
+<h1>Zodiac & Chinese Zodiac</h1>
+<p class="muted">Explore your Western zodiac, Chinese zodiac element, and a personal Eight Mansions Feng Shui profile.</p>
+<form class="card compact-form" method="post" action="/zodiac">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="birth_date">Date of birth</label>
+  <input id="birth_date" type="date" name="birth_date" required>
+  <label for="kua_formula">Eight Mansions calculation</label>
+  <select id="kua_formula" name="kua_formula">
+    <option value="both" {% if kua_formula == 'both' %}selected{% endif %}>Show both traditional formulas</option>
+    <option value="female" {% if kua_formula == 'female' %}selected{% endif %}>Female formula</option>
+    <option value="male" {% if kua_formula == 'male' %}selected{% endif %}>Male formula</option>
+  </select>
+  <p class="form-text">This classical method uses a gendered formula. Choose the one you prefer, or compare both.</p>
+  {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+  <button class="btn">Generate my reading</button>
+</form>
+{% if result %}
+  {% include "zodiac_result.html" %}
+{% endif %}
+{% endblock %}

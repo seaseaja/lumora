@@ -1,0 +1,48 @@
+<section class="zodiac-sign-grid">
+  <article class="card zodiac-sign-card zodiac-western-card">
+    <span class="zodiac-card-label">WESTERN ZODIAC</span>
+    <h2>{{ result.sign.name }}</h2>
+    <p class="zodiac-element">{{ result.sign.element }} element</p>
+    <p>{{ result.western_traits_id }}</p>
+  </article>
+  <article class="card zodiac-sign-card zodiac-shio-card">
+    <span class="zodiac-card-label">CHINESE ZODIAC · LUNAR YEAR {{ result.shio_year }}</span>
+    <h2>{{ result.shio.name }} · {{ result.birth_element }}</h2>
+    <p class="zodiac-element">Five-element year pairing</p>
+    <p>{{ result.shio_traits_id }}</p>
+  </article>
+</section>
+
+<section class="card zodiac-kua">
+  <div class="zodiac-section-heading">
+    <div><span class="zodiac-card-label">PERSONAL FENG SHUI</span><h2>Eight Mansions (Ba Zhai) directions</h2></div>
+    <span class="zodiac-method-tag">Kua year {{ result.kua_year }} · Li Chun boundary</span>
+  </div>
+  {% if result.kua_boundary_note %}<p class="zodiac-boundary-note">Your birthday falls near Li Chun, the solar-year boundary. This date-only estimate may differ from a calculation using the exact Li Chun time.</p>{% endif %}
+  <div class="zodiac-kua-grid">
+    {% for profile in result.kua_profiles %}
+    <article class="zodiac-kua-profile">
+      <div class="zodiac-kua-heading"><div><span>{{ profile.formula }} formula</span><h3>Kua {{ profile.number }}</h3></div><b>{{ profile.group }}</b></div>
+      <div class="zodiac-direction-list">
+        <div><span>Wealth & success</span><b>{{ profile.directions.wealth }}</b></div>
+        <div><span>Health & support</span><b>{{ profile.directions.health }}</b></div>
+        <div><span>Relationships</span><b>{{ profile.directions.relationships }}</b></div>
+        <div><span>Focus & stability</span><b>{{ profile.directions.focus }}</b></div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <p class="zodiac-method-note">Method: the Eight Mansions system derives a personal Kua number from the solar birth year and the selected traditional formula, then maps it to four supportive compass directions. Use a compass to orient your desk or bed. This method does not calculate auspicious calendar days or evaluate a home's layout.</p>
+</section>
+
+<section class="card zodiac-future">
+  <span class="zodiac-card-label">LOOKING AHEAD</span>
+  <h2>{{ result.reflection.theme }}</h2>
+  <p class="zodiac-personal-note">{{ result.personal_note }}</p>
+  <div class="zodiac-future-grid">
+    <article><h3>Money & opportunities</h3><p>{{ result.reflection.wealth }}</p></article>
+    <article><h3>Career</h3><p>{{ result.reflection.career }}</p></article>
+    <article class="zodiac-caution"><h3>What to watch for</h3><p>{{ result.reflection.caution }}</p></article>
+  </div>
+  <p class="zodiac-disclaimer">This is a traditional, reflective reading, not a guaranteed prediction or financial or career advice.</p>
+</section>

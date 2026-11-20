@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.db
+static/tarot_cards/*.png
+static/tarot_cards/*.jpg
+static/tarot_cards/*.jpeg
+static/tarot_cards/*.webp

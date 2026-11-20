@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign up{% endblock %}
+{% block content %}
+<div class="auth card">
+  <h1>Create your account</h1>
+  <form method="post" action="/register">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="name">Full name</label>
+    <input type="text" id="name" name="name" maxlength="100" required value="{{ form.name or '' }}">
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" maxlength="150" required value="{{ form.email or '' }}">
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" minlength="8" required>
+    <label for="birth_date">Date of birth (optional)</label>
+    <input type="date" id="birth_date" name="birth_date" value="{{ form.birth_date or '' }}">
+    <p class="muted small">Used for zodiac, shio and destiny matrix readings.</p>
+    <button class="btn" type="submit">Create account</button>
+  </form>
+  <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+</div>
+{% endblock %}

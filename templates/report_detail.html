@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Report · Lumora{% endblock %}
+{% block content %}
+<a class="back-link" href="/dashboard">&larr; Dashboard</a>
+<p class="eyebrow">{{ reading.type|upper }} REPORT</p>
+<h1>{% if reading.type=='zodiac' %}Zodiac & Chinese Zodiac{% else %}{{ reading.title }}{% endif %}</h1>
+<p class="muted">{{ reading.created_at.strftime('%d %b %Y at %H:%M') }}</p>
+
+{% if chat %}
+<section class="card chat-overview-card">
+  <div class="section-heading">
+    <div>
+      <h2>Conversation overview</h2>
+      <p class="muted">{{ chat.total_messages }} parsed messages · {{ chat.first_message_at.strftime('%d %b %Y') }} – {{ chat.last_message_at.strftime('%d %b %Y') }}</p>
+    </div>
+    <span class="badge">Raw chat not stored</span>
+  </div>
+  <div class="stats-grid">
+    {% for s in stats %}
+    <article class="chat-person-card chat-person-{{ loop.index }}">
+      <div class="chat-person-heading"><div class="chat-person-avatar">{{ (chat.my_alias if s.person=='me' else chat.other_alias)|first|upper }}</div><div><p class="eyebrow">SENDER {{ '%02d'|format(loop.index) }}</p><h3>{{ chat.my_alias if s.person=='me' else chat.other_alias }}</h3></div><span class="chat-person-share">{{ (s.bubbles * 100 / chat.total_messages)|round|int }}%</span></div>
+      <div class="chat-message-total"><b>{{ s.bubbles }}</b><span>messages sent</span></div>
+      <div class="chat-person-metrics">
+        <div><span>Avg. message length</span><b>{{ s.avg_length }} <small>chars</small></b></div>
+        <div><span>Median reply time</span><b>{% if s.median_response_sec is not none %}{% if s.median_response_sec < 60 %}{{ s.median_response_sec }} sec{% else %}{{ (s.median_response_sec // 60) }} min{% endif %}{% else %}—{% endif %}</b></div>
+        <div><span>Questions asked</span><b>{{ s.question_count }}</b></div>
+        <div><span>Follow-up messages</span><b>{{ s.double_texts }}</b></div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="chat-overview-insights">
+    <article class="chat-overview-analysis">
+      <div class="chat-insight-title"><span>✦</span><div><p class="eyebrow">CONTENT & NUMBERS</p><h3>What the patterns may suggest</h3></div></div>
+      {% if chat_chart.narrative.overview %}<p class="chat-overview-summary">{{ chat_chart.narrative.overview }}</p>
+      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-overview-summary">The AI request did not finish for this report. Check the configured API model and account balance, then upload again with AI analysis enabled.</p>
+      {% elif chat_chart.narrative_status == 'opted_out' %}<p class="chat-overview-summary">AI analysis was not enabled for this upload. Select the optional AI analysis checkbox when uploading to interpret a sample of message content.</p>
+      {% elif chat_chart.narrative_status == 'not_available' %}<p class="chat-overview-summary">No AI API key was configured when this report was created. Add a key and upload again to interpret message content.</p>
+      {% elif chat_chart.topics %}<p class="chat-overview-summary">The report found recurring themes across the export. Enable AI analysis during upload to interpret a sample of message content.</p>
+      {% else %}<p class="chat-overview-summary">This saved report contains message totals, but not topic counts or the original message text. Upload the export again to generate a content-based analysis.</p>{% endif %}
+      {% if chat_chart.narrative.connections %}<div class="chat-insight-connections">{% for item in chat_chart.narrative.connections %}<div><b>{{ item.signal }}</b><p>{{ item.interpretation }}</p></div>{% endfor %}</div>
+      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-insight-hint">The API request was attempted but did not return a usable analysis. A new upload will retry it with the current configuration.</p>
+      {% elif chat_chart.communication_metrics %}<p class="chat-insight-hint">The configured AI provider can connect topic signals with message balance, reply timing, questions, and follow-up patterns.</p>{% endif %}
+    </article>
+    <article class="chat-overview-topic-snapshot">
+      <div class="chat-insight-title"><span>◌</span><div><p class="eyebrow">RECURRING TOPIC SIGNALS</p><h3>What comes up often</h3></div></div>
+      {% if chat_chart.topics %}{% set max_topic = chat_chart.topics|map(attribute='count')|max %}<div class="chat-overview-topic-list">{% for topic in chat_chart.topics[:5] %}<div><p><span>{{ topic.name }}</span><b>{{ topic.count }}</b></p><div class="chat-bar-track"><span style="width:{{ (topic.count*100/max_topic) if max_topic else 0 }}%"></span></div></div>{% endfor %}</div><small>Keyword matches across the full export; a message may match more than one topic.</small>
+      {% else %}<p class="chat-overview-summary">Topic counts are unavailable for this older report. Upload the export again to build them.</p>{% endif %}
+    </article>
+  </div>
+  {% if chat_chart.narrative.topics %}<div class="chat-monthly-notes"><h3>Conversation themes from the message sample</h3><div class="chat-topic-grid">{% for topic in chat_chart.narrative.topics %}<article><span>{{ '%02d'|format(loop.index) }}</span><div><h3>{{ topic.title }}</h3><p>{{ topic.observation }}</p></div></article>{% endfor %}</div></div>{% endif %}
+  {% if chat_chart.narrative.monthly %}<div class="chat-monthly-notes"><h3>Month-by-month notes</h3><div>{% for item in chat_chart.narrative.monthly %}<article><b>{{ item.month }}</b><p>{{ item.observation }}</p></article>{% endfor %}</div></div>{% endif %}
+  {% if chat_chart.narrative.strengths or chat_chart.narrative.cautions %}<div class="chat-dynamics-grid">{% if chat_chart.narrative.strengths %}<article><h3>Patterns that worked well</h3><ul>{% for item in chat_chart.narrative.strengths %}<li>{{ item }}</li>{% endfor %}</ul></article>{% endif %}{% if chat_chart.narrative.cautions %}<article><h3>Worth keeping in mind</h3><ul>{% for item in chat_chart.narrative.cautions %}<li>{{ item }}</li>{% endfor %}</ul></article>{% endif %}</div>{% endif %}
+  <p class="muted small">These are descriptive patterns, not a measure of anyone's feelings or intent.</p>
+</section>
+
+<section class="chat-kpi-grid">
+  <article><span>Conversation span</span><b>{{ chat.first_message_at.strftime('%d %b %Y') }} – {{ chat.last_message_at.strftime('%d %b %Y') }}</b><small>{{ chat_chart.duration_days|default('—') }} days covered</small></article>
+  <article><span>Conversation sessions</span><b>{{ chat_chart.session_count|default('—') }}</b><small>New session after a 6-hour gap</small></article>
+  <article><span>Peak activity day</span><b>{{ chat_chart.peak_day.label|default('—') }}</b><small>{{ chat_chart.peak_day.count|default('—') }} messages</small></article>
+  <article><span>Peak activity hour</span><b>{{ chat_chart.peak_hour.label|default('—') }}</b><small>{{ chat_chart.peak_hour.count|default('—') }} messages</small></article>
+</section>
+
+{% set sender_share = (chat_chart.people[0].count * 100 / chat.total_messages) if chat.total_messages else 50 %}
+<section class="card chat-visual-card chat-balance-card">
+  <div class="chat-visual-heading"><div><p class="eyebrow">WHO SENT WHAT</p><h2>Conversation balance</h2></div><span>{{ chat.total_messages }} messages</span></div>
+  <div class="chat-balance-layout">
+    <div class="chat-donut" role="img" aria-label="{{ chat.my_alias }} sent {{ sender_share|round|int }} percent of messages; {{ chat.other_alias }} sent {{ (100-sender_share)|round|int }} percent" style="--sender-share:{{ sender_share }}%"><div><b>{{ chat.total_messages }}</b><span>messages</span></div></div>
+    <div class="chat-donut-legend"><p><i class="sender-color-1"></i><span>{{ chat.my_alias }}</span><b>{{ chat_chart.people[0].count }} · {{ sender_share|round(1) }}%</b></p><p><i class="sender-color-2"></i><span>{{ chat.other_alias }}</span><b>{{ chat_chart.people[1].count }} · {{ (100-sender_share)|round(1) }}%</b></p></div>
+  </div>
+</section>
+
+<section class="card chat-visual-card">
+  <div class="chat-visual-heading chat-timeline-heading">
+    <div><p class="eyebrow">CHAT ACTIVITY</p><h2>Message intensity over time</h2><p class="muted">{{ chat.first_message_at.strftime('%d %b %Y') }} – {{ chat.last_message_at.strftime('%d %b %Y') }}</p></div>
+    {% if chat_chart.daily_activity %}<div class="chat-chart-controls"><div class="chat-period-toggle" role="group" aria-label="Activity chart interval"><button type="button" data-period="weekly">Weekly</button><button type="button" data-period="monthly">Monthly</button></div></div>{% endif %}
+  </div>
+  {% if chat_chart.daily_activity %}
+  <div class="chat-line-legend"><span><i class="sender-color-1"></i>{{ chat.my_alias }}</span><span><i class="sender-color-2"></i>{{ chat.other_alias }}</span></div>
+  <div class="chat-line-wrap"><svg id="chat-activity-chart" viewBox="0 0 900 320" role="img" aria-label="Line chart of weekly and monthly message volume from the first chat date to the last"></svg></div>
+  {% else %}
+  <p class="chat-chart-note">Activity timelines are available for reports analyzed after this update. The original export is not stored, so this report cannot be reprocessed. <a href="/chat">Upload the export again to generate these charts.</a></p>
+  {% endif %}
+</section>
+
+{% if chat_chart.daily_activity %}
+<script>
+(() => {
+  const daily = {{ chat_chart.daily_activity|tojson }};
+  const senderLabels = {{ chat_chart.people|map(attribute='label')|list|tojson }};
+  const svg = document.getElementById('chat-activity-chart');
+  if (!svg || !daily.length) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const first = new Date('{{ chat_chart.first_date }}T00:00:00Z');
+  const last = new Date('{{ chat_chart.last_date }}T00:00:00Z');
+  const start = new Date(first);
+  const dayMs = 86400000;
+  const colors = ['#7254e8', '#f08c63'];
+  const formatDate = (value) => new Intl.DateTimeFormat('en', {month:'short', day:'numeric', timeZone:'UTC'}).format(value);
+  const make = (name, attrs = {}) => {
+    const element = document.createElementNS(NS, name);
+    Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
+    return element;
+  };
+  const draw = (period) => {
+    svg.replaceChildren();
+    const buckets = [];
+    const weeklyCount = Math.floor((last - first) / (7 * dayMs)) + 1;
+    if (period === 'weekly') {
+      for (let index = 0; index < weeklyCount; index += 1) {
+        const date = new Date(start.getTime() + index * 7 * dayMs);
+        buckets.push({key:index, label:formatDate(date), me:0, other:0});
+      }
+      daily.forEach((row) => {
+        const date = new Date(`${row.date}T00:00:00Z`);
+        const index = Math.floor((date - first) / (7 * dayMs));
+        if (buckets[index]) { buckets[index].me += row.me; buckets[index].other += row.other; }
+      });
+    } else {
+      const cursor = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), 1));
+      while (cursor <= end) {
+        const key = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`;
+        buckets.push({key, label:new Intl.DateTimeFormat('en', {month:'short', year:'2-digit', timeZone:'UTC'}).format(cursor), me:0, other:0});
+        cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+      }
+      daily.forEach((row) => {
+        const key = row.date.slice(0, 7);
+        const bucket = buckets.find((item) => item.key === key);
+        if (bucket) { bucket.me += row.me; bucket.other += row.other; }
+      });
+    }
+    const W = 900, H = 320, left = 55, right = 18, top = 18, bottom = 48;
+    const plotW = W - left - right, plotH = H - top - bottom;
+    const maxValue = Math.max(1, ...buckets.flatMap((bucket) => [bucket.me, bucket.other]));
+    for (let tick = 0; tick <= 4; tick += 1) {
+      const y = top + plotH - (tick / 4) * plotH;
+      svg.append(make('line', {x1:left, y1:y, x2:W-right, y2:y, class:'chat-grid-line'}));
+      const label = make('text', {x:left-10, y:y+4, 'text-anchor':'end', class:'chat-axis-label'});
+      label.textContent = Math.round(maxValue * tick / 4);
+      svg.append(label);
+    }
+    [['me', colors[0]], ['other', colors[1]]].forEach(([person, color]) => {
+      const points = buckets.map((bucket, index) => {
+        const x = buckets.length === 1 ? left + plotW/2 : left + index * plotW/(buckets.length-1);
+        const y = top + plotH - bucket[person] / maxValue * plotH;
+        return `${x},${y}`;
+      }).join(' ');
+      svg.append(make('polyline', {points, fill:'none', stroke:color, 'stroke-width':'3', 'stroke-linecap':'round', 'stroke-linejoin':'round'}));
+      buckets.forEach((bucket, index) => {
+        const x = buckets.length === 1 ? left + plotW/2 : left + index * plotW/(buckets.length-1);
+        const y = top + plotH - bucket[person] / maxValue * plotH;
+        const dot = make('circle', {cx:x, cy:y, r:buckets.length > 30 ? 2.5 : 4, fill:color});
+        const title = make('title');
+        title.textContent = `${bucket.label}: ${bucket[person]} messages`;
+        dot.append(title);
+        svg.append(dot);
+      });
+    });
+    const step = Math.max(1, Math.ceil(buckets.length / 7));
+    buckets.forEach((bucket, index) => {
+      if (index % step !== 0 && index !== buckets.length - 1) return;
+      const x = buckets.length === 1 ? left + plotW/2 : left + index * plotW/(buckets.length-1);
+      const label = make('text', {x, y:H-15, 'text-anchor':'middle', class:'chat-axis-label'});
+      label.textContent = bucket.label;
+      svg.append(label);
+    });
+  };
+  const buttons = [...document.querySelectorAll('[data-period]')];
+  const defaultPeriod = (last - first) > 45 * dayMs ? 'monthly' : 'weekly';
+  let period = defaultPeriod;
+  const updateChart = () => {
+    draw(period);
+    buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.period === period)));
+  };
+  buttons.forEach((button) => button.addEventListener('click', () => { period = button.dataset.period; updateChart(); }));
+  updateChart();
+})();
+</script>
+{% endif %}
+<section class="card chat-visual-card">
+  <div class="chat-visual-heading"><div><p class="eyebrow">MESSAGE VOLUME</p><h2>Messages by sender</h2></div><span>{{ chat.total_messages }} total</span></div>
+  {% set max_messages = chat_chart.people|map(attribute='count')|max %}
+  <div class="chat-sender-chart">
+    {% for person in chat_chart.people %}
+    {% set bar_width = (person.count * 100 / max_messages) if max_messages else 0 %}
+    <div class="chat-sender-row">
+      <div class="chat-sender-label"><span>{{ person.label }}</span><b>{{ person.count }}</b></div>
+      <div class="chat-bar-track" role="img" aria-label="{{ person.label }} sent {{ person.count }} messages"><span class="chat-volume-bar sender-color-{{ loop.index }}" style="width:{{ bar_width }}%"></span></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card chat-visual-card">
+  <div class="chat-visual-heading"><div><p class="eyebrow">MESSAGE TONE</p><h2>Emotion signals by sender</h2></div><span>Share of messages</span></div>
+  {% if chat_chart.emotions %}
+  <div class="chat-emotion-grid">
+    {% for person in chat_chart.emotions %}
+    <article class="chat-emotion-person"><h3>{{ person.label }}</h3>
+      {% for key,label in [('excited','Excited'),('angry','Angry'),('sad','Sad')] %}
+      <div class="chat-emotion-row"><div><span>{{ label }}</span><b>{{ person[key] }}%</b></div><div class="chat-bar-track"><span class="chat-emotion-bar emotion-{{ key }}" style="width:{{ person[key] }}%"></span></div></div>
+      {% endfor %}
+    </article>
+    {% endfor %}
+  </div>
+  <p class="chat-chart-note">Estimated with keyword and emoji signals in the message text. A message can match more than one category; this is not reliable emotion detection.</p>
+  {% else %}
+  <p class="chat-chart-note">Emotion charts are available for reports analyzed after this update. Original chat text is not stored, so older reports cannot be reprocessed.</p>
+  {% endif %}
+</section>
+
+{% elif reading.type=='tarot' %}
+<section class="card"><p>Your Tarot spread is saved. Open Tarot to view your free preview.</p><a href="/tarot?reading={{ reading.id }}">Open reading</a></section>
+{% elif reading.type=='zodiac' and zodiac_result %}
+{% include "zodiac_result.html" with context %}
+{% elif reading.type=='compatibility' and matrix_data %}
+<section class="card"><p class="eyebrow">COMPATIBILITY READING</p><div class="compatibility-chart"><div class="compatibility-person"><small>PERSON A</small><b>{{ '%02d'|format(matrix_data.first.numbers.center) }}</b><span>Center number</span></div><div class="compatibility-link"><i></i><b>{{ '%02d'|format(matrix_data.connection) }}</b><small>{{ matrix_data.connection_name }}</small></div><div class="compatibility-person"><small>PERSON B</small><b>{{ '%02d'|format(matrix_data.second.numbers.center) }}</b><span>Center number</span></div></div><div class="compatibility-score"><span>Connection reflection</span><b>{{ matrix_data.score }}<small>/100</small></b></div><article class="compatibility-interpretation"><h3>{{ matrix_data.connection_name }}</h3><p>{{ matrix_data.reading }}</p></article><p class="muted small">Reflection and entertainment only; this score is not a scientific compatibility measure.</p></section>
+{% elif reading.type=='matrix' %}
+<section class="card"><p>Your Matrix calculation is saved and can be reopened at any time.</p><a href="/matrix?reading_id={{ reading.id }}">Read this Matrix again</a></section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Checkout · Lumora{% endblock %}
+{% block content %}
+<p class="eyebrow">SIMULASI PEMBAYARAN</p>
+<h1>Checkout</h1>
+<section class="card checkout-card payment-demo">
+  <h2>{{ service.name }}</h2>
+  <p>Order <b>{{ order.order_code }}</b></p>
+  <div class="price">IDR {{ '{:,}'.format(order.amount) }}</div>
+  {% if order.status == 'paid' %}
+    <div class="alert ok">Pembayaran simulasi berhasil. Order ini sudah dibayar.</div>
+  {% elif order.status == 'pending' %}
+    <div class="payment-expiry"><span>Waktu pembayaran tersisa</span><strong id="payment-countdown" data-seconds="{{ remaining_seconds }}">{{ '%02d:%02d' % (remaining_seconds // 60, remaining_seconds % 60) }}</strong></div>
+    <div class="demo-code-wrap">
+      <div class="demo-barcode" role="img" aria-label="Barcode demo untuk order {{ order.order_code }}">
+        {% for bar in barcode_bars %}<span class="{% if bar.black %}barcode-black{% else %}barcode-white{% endif %}" style="flex-grow:{{ bar.width }}"></span>{% endfor %}
+      </div>
+      <b>DEMO · BUKAN KODE PEMBAYARAN</b>
+      <small>Barcode visual ini berubah untuk setiap order dan tidak dapat dipindai untuk membayar.</small>
+    </div>
+    <p class="muted">Ini hanya simulasi lokal. Tidak ada uang yang ditagihkan; tombol berikut menandai order sebagai dibayar untuk keperluan demo.</p>
+    <form method="post" action="/orders/{{ order.id }}/sandbox-pay" id="sandbox-payment-form"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn" id="sandbox-pay-button">Simulasikan pembayaran berhasil</button></form>
+    <script>
+      (() => {
+        const timer = document.getElementById('payment-countdown');
+        const button = document.getElementById('sandbox-pay-button');
+        let remaining = Number(timer.dataset.seconds || 0);
+        const update = () => {
+          const minutes = Math.floor(remaining / 60);
+          const seconds = remaining % 60;
+          timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          if (remaining <= 0) {
+            button.disabled = true;
+            button.textContent = 'Waktu pembayaran habis';
+            window.location.reload();
+            return;
+          }
+          remaining -= 1;
+          window.setTimeout(update, 1000);
+        };
+        update();
+      })();
+    </script>
+  {% elif order.status == 'expired' %}
+    <div class="alert">Waktu pembayaran habis. Buat order baru untuk memulai simulasi lagi.</div>
+  {% else %}
+    <p>Status: {{ order.status }}</p>
+  {% endif %}
+</section>
+<a class="back-link" href="/orders">← Semua order</a>
+{% endblock %}

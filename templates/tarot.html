@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Tarot · Lumora{% endblock %}
+{% block content %}
+<div class="tarot-page">
+  <a class="back-link" href="/dashboard">← Dashboard</a>
+  <p class="eyebrow">A READING MADE FOR YOUR QUESTION</p>
+  {% if reading %}
+  <section class="tarot-question-banner">
+    <div><span class="tarot-step">YOUR QUESTION</span><h1>{{ reading.question }}</h1><p>{{ reading.spread.name }} <span aria-hidden="true">·</span> {{ reading.reader.name }}</p></div>
+    <a class="tarot-new-link" href="/tarot">New reading <span aria-hidden="true">↗</span></a>
+  </section>
+  <section class="card tarot-result" data-reading-id="{{ reading.id }}" data-unlocked="{{ 'true' if reading.unlocked else 'false' }}">
+    <div class="section-heading"><div><p class="eyebrow">YOUR CARDS</p><h2>{% if reading.unlocked %}Your three cards{% else %}Choose a card to reveal{% endif %}</h2><p class="muted small mb-0">{% if reading.unlocked %}Your shuffled cards and complete reading are saved here.{% else %}Your three cards were shuffled at random. Tap the first card to reveal your preview.{% endif %}</p></div><span class="badge">{% if reading.unlocked %}{% if reading.ai_full %}AI reading{% else %}Card reading{% endif %}{% else %}{% if reading.ai_used %}AI preview{% else %}Free card preview{% endif %}{% endif %}</span></div>
+    <div class="tarot-grid tarot-grid-dynamic">
+    {% for draw in reading.draws %}
+      {% set is_locked = loop.index > 1 and not reading.unlocked %}
+      <article class="tarot-card tarot-pick-card {% if is_locked %}locked is-locked{% else %}is-concealed{% endif %}"
+        {% if not is_locked %}data-reveal-position="{{ loop.index }}" role="button" tabindex="0" aria-expanded="false"{% else %}aria-disabled="true"{% endif %}>
+        <div class="tarot-card-face" aria-hidden="true">
+          <span class="position">{{ '%02d'|format(loop.index) }} / {{ draw.label }}</span>
+          {% if not is_locked %}
+            {% if draw.card.image_url %}<div class="tarot-art-frame {% if draw.reversed %}is-reversed{% endif %}"><img src="{{ draw.card.image_url }}?deck=1" alt="{{ draw.card.name }} tarot card" decoding="async"></div>
+            {% else %}<div class="card-symbol">{% if draw.reversed %}↕{% else %}✦{% endif %}</div>{% endif %}
+            <h3>{{ draw.card.name }}</h3>
+            <span class="orientation">{% if draw.reversed %}Reversed{% else %}Upright{% endif %}</span>
+            <p>{{ draw.card.reversed_meaning if draw.reversed else draw.card.upright }}</p>
+          {% else %}
+            <div class="card-symbol card-back">✦</div><h3>Card waiting to be revealed</h3>
+            <p>Unlock the full reading to turn this card over.</p>
+          {% endif %}
+        </div>
+        <div class="tarot-card-cover" aria-hidden="true"><div class="cover-star">✦</div><span>{% if is_locked %}Unlock to reveal{% else %}Tap to reveal{% endif %}</span></div>
+      </article>
+    {% endfor %}
+    </div>
+    <div class="tarot-interpretation">
+      <p class="eyebrow">{% if reading.unlocked %}THE STORY IN YOUR CARDS{% else %}YOUR FIRST IMPRESSION{% endif %}</p>
+      {% if reading.unlocked and reading.interpretation %}<p class="reading-copy">{{ reading.interpretation }}</p>
+      {% else %}<p class="reading-copy tarot-free-preview" data-free-preview hidden>{{ reading.preview }}</p><p class="muted tarot-preview-hint" data-preview-hint>Tap the first card to reveal your free preview.</p>{% endif %}
+      {% if not reading.unlocked %}<p class="muted small mb-0">A longer interpretation and all card meanings are part of the full reading.</p>{% endif %}
+    </div>
+    {% if reading.ai_limit_reached %}<div class="alert info-note">Today's AI preview limit has been reached for your account, so this preview uses the card's master meaning.</div>{% endif %}
+    {% if not reading.unlocked %}
+    <div class="unlock-row"><div><b>Continue your reading</b><p class="muted small">Reveal the complete spread and receive a connected interpretation. Rp10,000 / session.</p></div>
+      <form method="post" action="/tarot/{{ reading.id }}/unlock"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn" type="submit">Continue to checkout</button></form>
+    </div>
+    {% endif %}
+  </section>
+
+  <p class="tarot-disclaimer">Tarot is for reflection and entertainment. It is not a prediction or a substitute for professional advice.</p>
+
+  {% else %}
+  <div class="tarot-hero"><div class="tarot-hero-copy"><span class="tarot-orb">✦</span><div><p class="eyebrow">PAUSE · BREATHE · BEGIN</p><h1>What’s on your mind?</h1><p>Share what you’re thinking about. Your question guides the cards and the kind of reflection you receive.</p><div class="tarot-trust"><span>✦ A private reading</span><span>✦ Your question, your spread</span><span>✦ Save it to My Readings</span></div></div></div>
+    <form class="tarot-question-form" method="post" action="/tarot/draw">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="question">Your question</label>
+      <textarea class="form-control tarot-question-input" id="question" name="question" rows="3" maxlength="300" required placeholder="What would you like a little clarity on?" autofocus></textarea>
+      <div class="question-meta"><span>Keep it open and focused on yourself</span><span id="question-count">0 / 300</span></div>
+      <div class="suggestion-list" aria-label="Question ideas">
+        <button type="button" class="suggestion-chip" data-question="What can help me move forward in my relationship?">Relationship</button>
+        <button type="button" class="suggestion-chip" data-question="What should I focus on in my career right now?">Career</button>
+        <button type="button" class="suggestion-chip" data-question="What might I need to see more clearly today?">Daily clarity</button>
+        <button type="button" class="suggestion-chip" data-question="What should I consider before making this choice?">A decision</button>
+      </div>
+      <div class="reader-picker"><div><label class="form-label">Choose your reader’s voice</label><p class="muted small">Same cards, a different way of looking at them.</p></div><div class="reader-options">
+        <label class="reader-option"><input type="radio" name="reader" value="intuitive" checked><span><b>The Intuitive</b><small>Imagery-rich and thoughtful</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="grounded"><span><b>The Grounded Guide</b><small>Clear and practical</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="gentle"><span><b>The Gentle One</b><small>Warm and reassuring</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="storyteller"><span><b>The Storyteller</b><small>Connects the cards into a story</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="direct"><span><b>The Straight Shooter</b><small>Honest and to the point</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="wise"><span><b>The Old Soul</b><small>Patient and reflective</small></span></label>
+        <label class="reader-option"><input type="radio" name="reader" value="curious"><span><b>The Curious Mind</b><small>Explores a few perspectives</small></span></label>
+      </div></div>
+      {% if ai_enabled %}<label class="ai-consent"><input type="checkbox" name="consent_ai" value="yes" required><span>I agree to send my question and selected cards to OpenAI to create this reading. The app owner’s OpenAI account may be charged for API use; the API key stays private on the server.</span></label>
+      {% else %}<div class="alert info-note">AI is not connected yet. Add <code>OPENAI_API_KEY</code> to your local <code>.env</code> for AI-guided card readings. You can still draw cards and see their master meanings.</div>{% endif %}
+      <button class="btn tarot-submit" type="submit"><span class="submit-label">Draw my cards</span><span aria-hidden="true">→</span></button>
+      <div class="shuffle-stage" aria-hidden="true"><span class="shuffle-card">✦</span><span class="shuffle-card">✦</span><span class="shuffle-card">✦</span></div>
+      <p class="tarot-price-note">See your first card for free. Unlock all three cards and the complete reading for Rp10,000 per session.</p>
+    </form>
+  </div>
+  <p class="tarot-disclaimer">Tarot is a reflection tool, not a source of certainty. Keep your own judgment at the center.</p>
+  {% endif %}
+</div>
+<script>
+(() => {
+  const question = document.getElementById('question');
+  const count = document.getElementById('question-count');
+  if (question && count) {
+    const updateCount = () => { count.textContent = `${question.value.length} / 300`; };
+    question.addEventListener('input', updateCount);
+    document.querySelectorAll('[data-question]').forEach((button) => button.addEventListener('click', () => {
+      question.value = button.dataset.question;
+      updateCount();
+      question.focus();
+    }));
+    const form = question.closest('form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const button = form.querySelector('.tarot-submit');
+      button.disabled = true;
+      form.classList.add('is-shuffling');
+      button.querySelector('.submit-label').textContent = 'Shuffling your deck...';
+      button.insertAdjacentHTML('afterbegin', '<span class="tarot-spinner" aria-hidden="true"></span>');
+      window.setTimeout(() => {
+        button.querySelector('.submit-label').textContent = 'Drawing your cards...';
+        form.submit();
+      }, 1400);
+    });
+  }
+
+  const pickCards = [...document.querySelectorAll('.tarot-pick-card[data-reveal-position]')];
+  document.querySelectorAll('.tarot-art-frame img').forEach((img) => img.addEventListener('error', () => {
+    const frame = img.closest('.tarot-art-frame');
+    if (frame) { frame.classList.add('art-missing'); frame.textContent = '✦'; }
+  }));
+  if (!pickCards.length) return;
+  const readingId = document.querySelector('.tarot-result')?.dataset.readingId;
+  const readingUnlocked = document.querySelector('.tarot-result')?.dataset.unlocked === 'true';
+  const storageKey = `lumora-tarot-revealed-${readingId}`;
+  let opened = [];
+  try { opened = JSON.parse(sessionStorage.getItem(storageKey) || '[]'); } catch (_) { opened = []; }
+  if (readingUnlocked) opened = pickCards.map((card) => card.dataset.revealPosition);
+  const preview = document.querySelector('[data-free-preview]');
+  const hint = document.querySelector('[data-preview-hint]');
+  const revealCard = (card) => {
+    const position = card.dataset.revealPosition;
+    if (card.classList.contains('is-revealed')) return;
+    card.classList.add('is-revealed');
+    card.setAttribute('aria-expanded', 'true');
+    card.querySelector('.tarot-card-face')?.setAttribute('aria-hidden', 'false');
+    if (!opened.includes(position)) opened.push(position);
+    try { sessionStorage.setItem(storageKey, JSON.stringify(opened)); } catch (_) {}
+    if (position === '1' && preview) {
+      preview.hidden = false;
+      if (hint) hint.hidden = true;
+    }
+  };
+  pickCards.forEach((card) => {
+    if (opened.includes(card.dataset.revealPosition)) revealCard(card);
+    card.addEventListener('click', () => revealCard(card));
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); revealCard(card); }
+    });
+  });
+})();
+</script>
+{% endblock %}

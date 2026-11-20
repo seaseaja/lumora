@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Chat Analysis · Lumora{% endblock %}
+{% block content %}
+<a class="back-link" href="/dashboard">← Dashboard</a>
+<p class="eyebrow">PRIVATE CHAT INSIGHTS</p>
+<h1>WhatsApp conversation report</h1>
+  <p class="muted chat-upload-intro">Upload a WhatsApp text export or ZIP. Explore message balance, activity over time, recurring topics, reply patterns, and content insights connected to the conversation statistics.</p>
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+<form class="card compact-form chat-upload-form" method="post" action="/chat/analyze" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label for="chat_file">WhatsApp export (.txt or .zip, up to 20 MB)</label>
+  <input id="chat_file" type="file" name="chat_file" accept=".txt,.zip,text/plain,application/zip" required>
+  <p class="form-text">A ZIP must contain exactly one WhatsApp .txt export. Text-only export is recommended; media files are not needed.</p>
+  <div class="split">
+    <div class="grow"><label for="my_alias">Your chart label</label><input id="my_alias" name="my_alias" value="{{ my_alias|default('You') }}" maxlength="50"></div>
+    <div class="grow"><label for="other_alias">Other participant's chart label</label><input id="other_alias" name="other_alias" value="{{ other_alias|default('Other person') }}" maxlength="50"></div>
+  </div>
+  <label class="check-label"><input type="checkbox" name="consent" value="yes" required> I have permission to analyze this conversation. I understand the report is an estimate and the raw export is not saved.</label>
+  {% if ai_enabled %}
+  <label class="check-label chat-ai-consent"><input type="checkbox" name="consent_ai" value="yes"><span><b>Analyze message content with the configured AI provider (optional)</b><small>Uses the configured OpenAI-compatible API endpoint and model. Up to 48 selected excerpts will be sent to that endpoint to identify discussion themes, monthly changes, and patterns related to message counts and reply timing. Participant sender names are replaced by your chart labels, but names written inside messages may remain. The provider account may incur usage charges. The export itself is not saved.</small></span></label>
+  {% else %}<p class="chat-ai-unavailable">Counts, charts, and basic keyword topic signals work without AI. Context-based analysis of message content needs an <code>OPENAI_API_KEY</code>.</p>{% endif %}
+  <button class="btn">Analyze conversation</button>
+</form>
+{% endblock %}

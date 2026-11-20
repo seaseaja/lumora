@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Lumora{% endblock %}
+{% block content %}
+<p class="eyebrow">YOUR PERSONAL SPACE</p>
+<h1>Hi {{ user.name }}, what would you like to explore?</h1>
+<p class="muted">Choose a reading to begin.</p>
+<div class="row g-3 feature-grid">
+  <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-chat"><div class="feature-top"><span class="feature-icon">◌</span><span class="price-pill">Free</span></div><h2>Chat Analysis</h2><p>Upload a WhatsApp export and see your chat patterns.</p><a class="open-btn" href="/chat">Open</a></article></div>
+  <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-tarot"><div class="feature-top"><span class="feature-icon">✧</span><span class="price-pill">Rp10,000 / session</span></div><h2>Tarot</h2><p>Draw cards and read a short interpretation.</p><a class="open-btn" href="/tarot">Open</a></article></div>
+  <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-matrix"><div class="feature-top"><span class="feature-icon">◇</span><span class="price-pill">Rp10,000 / session</span></div><h2>Destiny Matrix</h2><p>Calculate your matrix from your birth date.</p><a class="open-btn" href="/matrix">Open</a></article></div>
+  <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-zodiac"><div class="feature-top"><span class="feature-icon">☼</span><span class="price-pill">Free</span></div><h2>Zodiac and Shio</h2><p>Character reading from your birth date.</p><a class="open-btn" href="/zodiac">Open</a></article></div>
+</div>
+{% endblock %}

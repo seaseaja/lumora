@@ -1,0 +1,208 @@
+:root {
+  --motion-ease: cubic-bezier(.2, .75, .25, 1);
+  --motion-shadow: 0 22px 54px rgba(76, 49, 155, .13);
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse at 88% 0%, rgba(218, 205, 255, .48), transparent 34%),
+    radial-gradient(ellipse at 4% 42%, rgba(223, 246, 237, .3), transparent 25%),
+    radial-gradient(ellipse at 92% 78%, rgba(255, 234, 223, .3), transparent 28%);
+  background-attachment: fixed;
+}
+
+.wrap > *, .auth-layout, .mobile-topbar,
+.sidebar .brand, .sidebar .side-label, .sidebar .side-link,
+.sidebar .side-logout, .sidebar .side-user,
+.feature-card, .tarot-card, .sign-card,
+.matrix-grid > *, .stats-grid > *, .chat-person-card,
+.chat-visual-card, .chat-overview-analysis, .chat-overview-topic-snapshot {
+  --motion-order: 0;
+}
+
+html.motion-ready [data-motion-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0) scale(.992);
+  transition:
+    opacity .58s var(--motion-ease),
+    transform .58s var(--motion-ease);
+  transition-delay: calc(var(--motion-order, 0) * 45ms);
+  will-change: opacity, transform;
+}
+
+html.motion-ready [data-motion-reveal].is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: auto;
+}
+
+.card, .feature-card, .tarot-card, .sign-card,
+.chat-visual-card, .chat-person-card, .chat-overview-analysis,
+.chat-overview-topic-snapshot, .compatibility-interpretation,
+.matrix-grid article, .profile-details > div, .auth.card {
+  transition:
+    transform .28s var(--motion-ease),
+    box-shadow .28s var(--motion-ease),
+    border-color .22s ease,
+    background-color .22s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover, .chat-visual-card:hover, .chat-person-card:hover,
+  .chat-overview-analysis:hover, .chat-overview-topic-snapshot:hover,
+  .compatibility-interpretation:hover, .matrix-grid article:hover,
+  .profile-details > div:hover, .auth.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--motion-shadow);
+    border-color: #d2c4f5;
+  }
+
+  .feature-card:hover, .tarot-card:hover, .sign-card:hover {
+    transform: translateY(-6px) rotate(-.35deg);
+    box-shadow: var(--motion-shadow);
+    border-color: #cbbbf4;
+  }
+
+  .sidebar .side-link:hover {
+    transform: translateX(4px);
+    background: linear-gradient(100deg, #f2edff, #fff8f4);
+  }
+}
+
+.btn, button, .suggestion-chip, .reader-option, .side-link, .back-link,
+.feature-card, .tarot-new-link, .nav a {
+  transition-timing-function: var(--motion-ease);
+}
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s var(--motion-ease), box-shadow .2s ease, background .2s ease;
+}
+
+.btn::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(110deg, transparent 22%, rgba(255,255,255,.25) 48%, transparent 72%);
+  transform: translateX(-130%);
+  transition: transform .55s var(--motion-ease);
+  pointer-events: none;
+}
+
+.btn:hover::after { transform: translateX(130%); }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(109, 76, 229, .28); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn:focus-visible, a:focus-visible, button:focus-visible {
+  outline: 3px solid rgba(109, 76, 229, .35);
+  outline-offset: 3px;
+}
+
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 4px rgba(109, 76, 229, .14), 0 8px 22px rgba(76, 49, 155, .08);
+}
+
+.sidebar .brand, .mobile-topbar .brand, .auth-hero .brand {
+  transition: color .2s ease, letter-spacing .2s var(--motion-ease);
+}
+.sidebar .brand:hover, .mobile-topbar .brand:hover, .auth-hero .brand:hover {
+  color: var(--pri);
+  letter-spacing: -.035em;
+}
+
+.chat-bar-track > span, .chat-emotion-row .chat-emotion-bar {
+  transform-origin: left center;
+  animation: bar-grow .8s var(--motion-ease) both;
+}
+.chat-line-wrap polyline {
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: chart-draw 1.25s .12s var(--motion-ease) forwards;
+}
+.chat-line-wrap circle { animation: chart-point .35s .45s ease-out both; }
+
+.auth-hero {
+  min-height: 540px;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 38px clamp(28px, 4.5vw, 54px) 30px;
+}
+.auth-hero > .auth-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 450px;
+  margin: auto 0 0;
+}
+.auth-hero-copy .eyebrow { margin-bottom: 12px; }
+.auth-hero-copy h1 {
+  max-width: 470px;
+  margin: 0 0 12px;
+  font-size: clamp(38px, 4.3vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -.055em;
+}
+.auth-hero-copy > p:last-child {
+  margin: 0;
+  color: #625a79;
+  font-size: 15px;
+}
+.lumora-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 142px;
+  margin: 0 auto;
+  padding-left: 36px;
+}
+.auth-hero > .lumora-illustration { margin: 0 auto; }
+.illustration-tile {
+  display: grid;
+  place-items: center;
+  width: 90px;
+  height: 112px;
+  flex: none;
+  border: 1px solid rgba(255,255,255,.9);
+  border-radius: 21px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 15px 35px rgba(61,44,118,.11);
+  backdrop-filter: blur(8px);
+  animation: illustration-float 4.8s ease-in-out infinite;
+}
+.illustration-chat { transform: rotate(-8deg) translateY(5px); background: linear-gradient(145deg,#fff,#effaf7); }
+.illustration-chat svg { width: 48px; fill: none; stroke: #7760d5; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.illustration-chat i { display: block; width: 42px; height: 4px; margin-top: 4px; border-radius: 9px; background: #d9d1f5; }
+.illustration-chat i:last-child { width: 29px; margin-top: 7px; background: #d4ebe2; }
+.illustration-tarot { width: 98px; height: 138px; border-radius: 18px; background: linear-gradient(155deg,#a893ee,#7455d8); animation-delay: -.8s; }
+.tarot-frame { display: grid; width: 72px; height: 108px; place-items: center; border: 1px solid rgba(255,255,255,.72); border-radius: 13px; }
+.tarot-frame svg { width: 52px; fill: none; stroke: #fff; stroke-width: 1.5; stroke-linejoin: round; }
+.illustration-stars { transform: rotate(8deg) translateY(4px); background: linear-gradient(145deg,#fff,#fff3e6); animation-delay: -1.6s; }
+.illustration-stars svg { width: 56px; fill: none; stroke: #d78a67; stroke-width: 1.4; }
+@keyframes illustration-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+
+@media (max-width: 680px) {
+  .auth-hero { min-height: 480px; gap: 18px; padding: 26px 24px 22px; }
+  .auth-hero > .brand { margin: 0; }
+  .auth-hero > .auth-hero-copy { margin: auto 0 0; }
+  .auth-hero-copy h1 { font-size: clamp(36px, 9vw, 46px); }
+  .auth-hero-copy > p:last-child { font-size: 14px; }
+  .lumora-illustration { min-height: 128px; gap: 9px; padding-left: 0; }
+  .illustration-tile { width: 78px; height: 98px; border-radius: 18px; }
+  .illustration-tarot { width: 86px; height: 120px; }
+  .tarot-frame { width: 64px; height: 94px; }
+}
+
+@keyframes bar-grow { from { transform: scaleX(.02); opacity: .45; } to { transform: scaleX(1); opacity: 1; } }
+@keyframes chart-draw { to { stroke-dashoffset: 0; } }
+@keyframes chart-point { from { transform: scale(.4); opacity: .2; } to { transform: scale(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
+  html.motion-ready [data-motion-reveal] { opacity: 1; transform: none; }
+}

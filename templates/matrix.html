@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Destiny Matrix · Lumora{% endblock %}
+{% block content %}
+<a class="back-link" href="/dashboard">← Dashboard</a>
+<p class="eyebrow">NUMEROLOGY FOR REFLECTION</p>
+<h1>Destiny Matrix</h1>
+<p class="muted">Explore a personal chart or compare two birth dates to reflect on relationship dynamics.</p>
+
+<nav class="matrix-feature-nav" aria-label="Destiny Matrix tools">
+  <a href="#personal-chart">Destiny Matrix Chart</a>
+  <a href="#compatibility-analysis">Compatibility Chart Analysis</a>
+  <a href="#compatibility-reading">Compatibility Reading</a>
+</nav>
+
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
+<section class="card matrix-tool" id="personal-chart">
+  <div class="section-heading"><div><p class="eyebrow">01 · PERSONAL CHART</p><h2>Destiny Matrix Chart</h2></div><span class="badge">Free preview</span></div>
+  <p class="muted">Enter a birth date to reveal your core numbers and Arcana for reflection.</p>
+  <form class="compact-form matrix-date-form" method="post" action="/matrix">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label for="birth_date">Date of birth</label><input id="birth_date" type="date" name="birth_date" required>
+    <button class="btn">Calculate my chart</button>
+  </form>
+  {% if result %}
+  <div class="section-heading"><div><h3>Personal Matrix</h3><p class="muted">{{ result.date.strftime('%d %b %Y') }}</p></div><span class="badge">{% if result.unlocked %}Unlocked{% else %}Free preview{% endif %}</span></div>
+  <div class="matrix-grid">{% for key,num in result.numbers.items() %}<article><span>{{ key|capitalize }}</span><b>{{ '%02d'|format(num) }}</b>{% if key == 'center' or result.unlocked %}<h3>{{ result.arcana[num].name if result.arcana[num] else 'Arcana ' ~ num }}</h3><p>{{ result.arcana[num].keywords if result.arcana[num] else 'The full interpretation is being prepared.' }}</p>{% if result.unlocked and result.arcana[num] %}{% set arcana = result.arcana[num] %}<div class="matrix-arcana-detail">{% for label, value in [('Personality', arcana.personality), ('Talent', arcana.talent), ('Life purpose', arcana.life_purpose), ('Relationships', arcana.relationship), ('Career & money', arcana.career_money), ('Karmic lesson', arcana.karmic_lesson)] %}{% if value %}<section><b>{{ label }}</b><p>{{ value }}</p></section>{% endif %}{% endfor %}</div>{% endif %}{% else %}<h3>Locked</h3><p>Unlock to reveal this Arcana.</p>{% endif %}</article>{% endfor %}</div>
+  {% if not result.unlocked %}<form method="post" action="/matrix/{{ result.id }}/unlock"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn">Unlock all Arcana readings · IDR 10,000</button></form>{% else %}<p class="alert ok">All five positions in your Matrix are unlocked and saved.</p>{% endif %}
+  {% endif %}
+</section>
+
+<section class="card matrix-tool" id="compatibility-analysis">
+  <div class="section-heading"><div><p class="eyebrow">02 · TWO PERSONAL MATRICES</p><h2>Compatibility Chart Analysis</h2></div><span class="badge">Free preview</span></div>
+  <p class="muted">Compare two birth dates to explore shared numbers, each person's center number, and relationship themes for reflection.</p>
+  <form class="compatibility-form" method="post" action="/matrix/compatibility">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>Your date of birth<input type="date" name="birth_date" required></label>
+    <label>Partner's or other person's date of birth<input type="date" name="partner_birth_date" required></label>
+    <button class="btn">Generate compatibility chart</button>
+  </form>
+  {% if compatibility %}
+  <div class="compatibility-result" id="compatibility-reading">
+    <div class="compatibility-score"><span>Connection reflection</span><b>{{ compatibility.score }}<small>/100</small></b><p>A numerology prompt for reflection, not a definitive measure of relationship quality.</p></div>
+    <div class="compatibility-chart" role="img" aria-label="Compatibility chart: center numbers {{ compatibility.first.numbers.center }} and {{ compatibility.second.numbers.center }} connect through {{ '%02d'|format(compatibility.connection) }}">
+      <div class="compatibility-person"><small>PERSON A</small><b>{{ '%02d'|format(compatibility.first.numbers.center) }}</b><span>Center number</span></div>
+      <div class="compatibility-link"><i></i><b>{{ '%02d'|format(compatibility.connection) }}</b><small>{{ compatibility.connection_name }}</small></div>
+      <div class="compatibility-person"><small>PERSON B</small><b>{{ '%02d'|format(compatibility.second.numbers.center) }}</b><span>Center number</span></div>
+    </div>
+    <div class="compatibility-numbers"><div><b>Shared numbers</b><span>{{ compatibility.shared_label }}</span></div><div><b>Connection theme</b><span>{{ compatibility.connection_keywords or 'How you connect and learn from each other' }}</span></div></div>
+    <article class="compatibility-interpretation"><p class="eyebrow">COMPATIBILITY READING</p><h3>{{ compatibility.connection_name }}</h3><p>{{ compatibility.reading }}</p></article>
+  </div>
+  {% endif %}
+</section>
+
+<section class="matrix-note"><span>✧</span><p>Numerology is for reflection and entertainment. These results are not scientific predictions or definitive assessments of a relationship.</p></section>
+{% endblock %}
