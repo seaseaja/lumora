@@ -17,12 +17,17 @@ INPUT_DIR = ROOT / "sampel-chat"
 OUTPUT_FILE = Path(__file__).resolve().parent / "sample_chat_messages.csv"
 LINE_RE = re.compile(
     r"^\[?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}),?\s+"
-    r"(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)\]?\s*"
+    r"(\d{1,2}[:.]\d{2}(?:[:.]\d{2})?(?:\s?[APap][Mm])?)\]?\s*"
     r"(?:-\s*|\s+)([^:]{1,100}):\s?(.*)$"
 )
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I)
 URL_RE = re.compile(r"\b(?:https?://|www\.)\S+", re.I)
 PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d .()\-]{7,}\d(?!\w)")
+MEDIA_RE = re.compile(
+    r"^<?\s*(?:media omitted|.*omitted|.*tidak disertakan|.*dihapus|this message was deleted|pesan ini telah dihapus)\s*>?$",
+    re.I,
+)
+SAMPLE_NO_RE = re.compile(r"(\d+)")
 
 
 def decode_export(payload: bytes) -> str:
@@ -44,7 +49,7 @@ def parse_timestamp(date_text: str, time_text: str, month_first: bool):
     ]
     for fmt in formats:
         try:
-            return datetime.strptime(f"{date_text} {time_text.upper()}", fmt)
+            return datetime.strptime(f"{date_text} {time_text.replace('.', ':').upper()}", fmt)
         except ValueError:
             continue
     return None
@@ -54,7 +59,7 @@ def parse_export(text: str):
     lines = text.splitlines()
     month_first_evidence = day_first_evidence = 0
     for line in lines:
-        match = LINE_RE.match(line.strip())
+        match = LINE_RE.match(line.lstrip("\u200e\u200f\ufeff").rstrip())
         if not match:
             continue
         first, second = (int(part) for part in re.split(r"[/-]", match.group(1))[:2])
@@ -66,7 +71,7 @@ def parse_export(text: str):
 
     messages = []
     for line in lines:
-        match = LINE_RE.match(line.strip())
+        match = LINE_RE.match(line.lstrip("\u200e\u200f\ufeff").rstrip())
         if match:
             timestamp = parse_timestamp(match.group(1), match.group(2), month_first)
             if timestamp:
@@ -77,9 +82,22 @@ def parse_export(text: str):
     return messages
 
 
+def name_patterns(names: list[str]):
+    """Full sender names plus each word of 3+ letters; the last letter may repeat (e.g. "Chelseaaa")."""
+    parts = set()
+    for name in names:
+        if name:
+            parts.add(name)
+            parts.update(word for word in re.findall(r"[^\W\d_]{3,}", name))
+    return [
+        re.compile(rf"(?<!\w){re.escape(part[:-1])}{re.escape(part[-1])}+(?!\w)", re.I)
+        for part in sorted(parts, key=len, reverse=True)
+    ]
+
+
 def scrub_message(text: str, names: list[str]) -> str:
-    for name in sorted((item for item in names if item), key=len, reverse=True):
-        text = re.sub(rf"(?<!\w){re.escape(name)}(?!\w)", "[participant]", text, flags=re.I)
+    for pattern in name_patterns(names):
+        text = pattern.sub("[participant]", text)
     text = URL_RE.sub("[URL]", text)
     text = EMAIL_RE.sub("[EMAIL]", text)
     text = PHONE_RE.sub("[PHONE]", text)
@@ -102,7 +120,11 @@ def read_zip(path: Path) -> str:
 
 
 def main():
-    archives = sorted(INPUT_DIR.glob("*.zip"))
+    # Natural sort so "sampel 2" comes before "sampel 10"; the ID reuses the sample number.
+    def sample_number(path: Path) -> int:
+        match = SAMPLE_NO_RE.search(path.stem)
+        return int(match.group(1)) if match else 10_000
+    archives = sorted(INPUT_DIR.glob("*.zip"), key=lambda path: (sample_number(path), path.name))
     if not archives:
         raise SystemExit(f"No ZIP exports found in {INPUT_DIR}")
 
@@ -113,20 +135,24 @@ def main():
         sender_counts = Counter(sender for _, sender, _ in parsed)
         participants = {sender: f"participant_{i}" for i, (sender, _) in enumerate(sender_counts.most_common(), start=1)}
         private_names = list(participants)
-        conversation_id = f"conversation_{index:02d}"
+        number = sample_number(path)
+        conversation_id = f"conversation_{number if number < 10_000 else index:02d}"
+        if not parsed:
+            print(f"WARNING: {path.name} produced no messages; check its date/time format.")
         for timestamp, sender, body in parsed:
             rows.append({
                 "conversation_id": conversation_id,
                 "timestamp": timestamp.isoformat(sep=" "),
                 "sender": participants[sender],
                 "text": scrub_message(body, private_names),
+                "is_media": int(bool(MEDIA_RE.match(body.strip()))),
             })
         conversations[conversation_id] = len(parsed)
 
     rows.sort(key=lambda row: (row["conversation_id"], row["timestamp"]))
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT_FILE.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=("conversation_id", "timestamp", "sender", "text"))
+        writer = csv.DictWriter(handle, fieldnames=("conversation_id", "timestamp", "sender", "text", "is_media"))
         writer.writeheader()
         writer.writerows(rows)
 
