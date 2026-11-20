@@ -346,17 +346,17 @@ class RetryableAIError(RuntimeError):
     pass
 
 
-def _call_ai_once(model: str, api_key: str, instructions: str, prompt: str, max_output_tokens: int) -> str:
+def _call_ai_once(model: str, api_key: str, instructions: str, prompt: str, max_output_tokens: int,
+                  json_mode: bool = True) -> str:
     is_gemini = "generativelanguage.googleapis.com" in OPENAI_BASE_URL
     if is_gemini:
         request_payload = {
             "systemInstruction": {"parts": [{"text": instructions}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "maxOutputTokens": max_output_tokens,
-                "responseMimeType": "application/json",
-            },
+            "generationConfig": {"maxOutputTokens": max_output_tokens},
         }
+        if json_mode:
+            request_payload["generationConfig"]["responseMimeType"] = "application/json"
         endpoint = f"{OPENAI_BASE_URL}/models/{model}:generateContent"
         headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     else:
@@ -416,7 +416,7 @@ def _call_ai_once(model: str, api_key: str, instructions: str, prompt: str, max_
     return result
 
 
-def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) -> str:
+def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600, json_mode: bool = True) -> str:
     """Call Gemini or an OpenAI Responses-compatible API on the server.
 
     Busy/overloaded responses (429/5xx, timeouts) are retried once and then the
@@ -430,7 +430,7 @@ def call_openai(instructions: str, prompt: str, max_output_tokens: int = 600) ->
     for model in ai_models_to_try():
         for attempt in range(2):
             try:
-                return _call_ai_once(model, api_key, instructions, prompt, max_output_tokens)
+                return _call_ai_once(model, api_key, instructions, prompt, max_output_tokens, json_mode)
             except RetryableAIError as exc:
                 last_error = exc
                 print(f"AI call retryable failure: {exc}")
@@ -515,9 +515,50 @@ def make_full_tarot_reading(meta, draws):
         "connect the cards into one cohesive reading and end with one practical journaling prompt. "
         "Use the selected reader's voice: " + reader["style"] + ". Keep it compassionate, non-deterministic, "
         "and focused on the user's choices. Never claim to know another person's hidden feelings or "
-        "give medical, legal, or financial advice."
+        "give medical, legal, or financial advice. Write plain text paragraphs separated by blank lines. "
+        "Do not use JSON, code, markdown symbols, headings with # or bullet characters."
     )
-    return call_openai(instructions, prompt, 1000)[:6000]
+    return readable_ai_text(call_openai(instructions, prompt, 1800, json_mode=False))[:6000]
+
+
+def readable_ai_text(text: str) -> str:
+    """Turn AI output that came back as JSON (older readings) into plain readable paragraphs."""
+    raw = str(text or "").strip()
+    if raw.startswith("```"):
+        raw = raw.strip("`").removeprefix("json").strip()
+    if not raw.startswith(("{", "[")):
+        return str(text or "").strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return str(text or "").strip()
+
+    skip = {"question", "card", "orientation", "position", "spread", "reader", "label"}
+    paragraphs = []
+
+    def walk(node, heading=None):
+        if isinstance(node, str):
+            if node.strip():
+                paragraphs.append(f"{heading}: {node.strip()}" if heading else node.strip())
+        elif isinstance(node, list):
+            for item in node:
+                walk(item, heading)
+        elif isinstance(node, dict):
+            # A card entry: use "Position — Card (orientation)" as its heading.
+            title = None
+            if node.get("card"):
+                title = str(node["card"])
+                if node.get("orientation"):
+                    title += f" ({node['orientation']})"
+                if node.get("position"):
+                    title = f"{node['position']} — {title}"
+            for key, value in node.items():
+                if key in skip:
+                    continue
+                walk(value, title)
+
+    walk(data)
+    return "\n\n".join(paragraphs) if paragraphs else str(text or "").strip()
 
 
 @app.get("/tarot")
@@ -537,7 +578,7 @@ def tarot_page(request: Request, user=Depends(require_user), session: Session = 
             reading = {"id": saved.id, "draws": [], "unlocked": bool(order) or meta.get("spread") == "one",
                        "question": meta.get("question", ""), "spread": TAROT_SPREADS.get(meta.get("spread"), TAROT_SPREADS["three"]),
                        "reader": TAROT_READERS.get(meta.get("reader"), TAROT_READERS["intuitive"]),
-                       "preview": meta.get("preview", ""), "interpretation": meta.get("interpretation", ""),
+                       "preview": meta.get("preview", ""), "interpretation": readable_ai_text(meta.get("interpretation", "")),
                        "ai_used": bool(meta.get("ai_used")),
                        "ai_full": bool(meta.get("ai_full")),
                        "ai_limit_reached": bool(meta.get("ai_limit_reached"))}
