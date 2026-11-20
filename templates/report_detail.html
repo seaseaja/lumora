@@ -33,13 +33,13 @@
     <article class="chat-overview-analysis">
       <div class="chat-insight-title"><span>✦</span><div><p class="eyebrow">CONTENT & NUMBERS</p><h3>What the patterns may suggest</h3></div></div>
       {% if chat_chart.narrative.overview %}<p class="chat-overview-summary">{{ chat_chart.narrative.overview }}</p>
-      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-overview-summary">The AI request did not finish for this report. Check the configured API model and account balance, then upload again with AI analysis enabled.</p>
+      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-overview-summary">{% if chat_chart.narrative_error and ('503' in chat_chart.narrative_error or '429' in chat_chart.narrative_error or 'high demand' in chat_chart.narrative_error) %}The AI service was busy when this report was created, so the written analysis could not be generated. The charts below are still accurate. Upload the chat again in a few minutes to get the AI analysis.{% else %}The AI analysis could not be generated for this report. The charts below are still accurate. Upload the chat again with AI analysis enabled to retry.{% endif %}</p>
       {% elif chat_chart.narrative_status == 'opted_out' %}<p class="chat-overview-summary">AI analysis was not enabled for this upload. Select the optional AI analysis checkbox when uploading to interpret a sample of message content.</p>
       {% elif chat_chart.narrative_status == 'not_available' %}<p class="chat-overview-summary">No AI API key was configured when this report was created. Add a key and upload again to interpret message content.</p>
       {% elif chat_chart.topics %}<p class="chat-overview-summary">The report found recurring themes across the export. Enable AI analysis during upload to interpret a sample of message content.</p>
       {% else %}<p class="chat-overview-summary">This saved report contains message totals, but not topic counts or the original message text. Upload the export again to generate a content-based analysis.</p>{% endif %}
       {% if chat_chart.narrative.connections %}<div class="chat-insight-connections">{% for item in chat_chart.narrative.connections %}<div><b>{{ item.signal }}</b><p>{{ item.interpretation }}</p></div>{% endfor %}</div>
-      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-insight-hint">The API request was attempted but did not return a usable analysis. A new upload will retry it with the current configuration.</p>
+      {% elif chat_chart.narrative_status in ['unavailable', 'invalid_response'] %}<p class="chat-insight-hint">This is usually temporary. A new upload retries automatically and switches to a backup model if the main one is busy.</p>
       {% elif chat_chart.communication_metrics %}<p class="chat-insight-hint">The configured AI provider can connect topic signals with message balance, reply timing, questions, and follow-up patterns.</p>{% endif %}
     </article>
     <article class="chat-overview-topic-snapshot">
