@@ -1,12 +1,9 @@
 (() => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // One orchestrated entrance: the page's top-level blocks, then the cards it deals out.
+  // The sidebar stays still (it persists across pages via View Transitions).
   const selector = [
-    '.wrap > *', '.auth-layout', '.mobile-topbar',
-    '.sidebar .brand', '.sidebar .side-label', '.sidebar .side-link',
-    '.sidebar .side-logout', '.sidebar .side-user',
-    '.feature-card', '.tarot-card', '.sign-card',
-    '.matrix-grid > *', '.stats-grid > *', '.chat-person-card',
-    '.chat-visual-card', '.chat-overview-analysis', '.chat-overview-topic-snapshot'
+    '.wrap > *', '.mobile-topbar', '.feature-card', '.tarot-card', '.sign-card'
   ].join(',');
   const elements = [...new Set(document.querySelectorAll(selector))];
   if (reduceMotion || !('IntersectionObserver' in window)) return;

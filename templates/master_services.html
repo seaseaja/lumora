@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Master: Services · Lumora{% endblock %}
+{% block content %}
+<h1>Master Data: Services &amp; Prices</h1>
+<p class="muted">Admin only. These prices are copied into each new order, so changing a price never changes past orders.</p>
+<div class="split">
+  <div class="card grow">
+    <table>
+      <thead><tr><th>Code</th><th>Service</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for s in services %}
+        <tr>
+          <td><code>{{ s.code }}</code></td>
+          <td>{{ s.name }}</td>
+          <td>{% if s.price %}Rp{{ '{:,}'.format(s.price) }}{% else %}Free{% endif %}</td>
+          <td><span class="status-pill {{ 'is-on' if s.is_active else 'is-off' }}">{{ 'Active' if s.is_active else 'Off' }}</span></td>
+          <td class="actions">
+            <a href="/master/services?edit={{ s.id }}">Edit</a>
+            {% if s.id in used %}
+              <span class="muted small" title="This service has orders. Turn it off instead of deleting it.">In use</span>
+            {% else %}
+            <form method="post" action="/master/services/{{ s.id }}/delete" onsubmit="return confirm('Delete this service?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <button class="link-danger" type="submit">Delete</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">No services yet. Add the first one on the right.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card side">
+    <h2>{{ 'Edit service' if item and item.id else 'Add service' }}</h2>
+    <form method="post" action="/master/services/save">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="service_id" value="{{ item.id if item else '' }}">
+      <label for="code">Code</label>
+      <input id="code" name="code" maxlength="20" required pattern="[a-z][a-z0-9_]{1,19}"
+             value="{{ item.code if item else '' }}" {{ 'readonly' if item and item.id }}>
+      <small class="muted">{% if item and item.id %}The code links the service to app features and can't be changed.{% else %}Lowercase, e.g. <code>tarot</code>.{% endif %}</small>
+      <label for="name">Service name</label>
+      <input id="name" name="name" maxlength="100" required value="{{ item.name if item else '' }}">
+      <label for="price">Price (Rp)</label>
+      <input id="price" name="price" type="number" min="0" max="100000000" step="500" required value="{{ item.price if item else 0 }}">
+      <label class="check-label"><input type="checkbox" name="is_active" value="yes" {{ 'checked' if not item or item.is_active }}> Available to customers</label>
+      <button class="btn" type="submit">Save service</button>
+      <a class="btn btn-ghost" href="/master/services">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

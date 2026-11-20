@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from pydantic import NaiveDatetime
-from sqlalchemy import Column, Text, UniqueConstraint
+from sqlalchemy import Column, LargeBinary, Text, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -29,6 +29,16 @@ class User(SQLModel, table=True):
     totp_secret: Optional[str] = Field(default=None, max_length=64)  # 2FA (opsional)
     totp_enabled: bool = False
     created_at: NaiveDatetime = Field(default_factory=utcnow)
+
+
+class UserAvatar(SQLModel, table=True):
+    """Avatar image bytes stored in Postgres (serverless hosts like Vercel have no writable disk)."""
+    __tablename__ = "user_avatars"
+
+    user_id: int = Field(foreign_key="users.id", primary_key=True)
+    content_type: str = Field(max_length=20)
+    data: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
+    updated_at: NaiveDatetime = Field(default_factory=utcnow)
 
 
 class LoginSession(SQLModel, table=True):

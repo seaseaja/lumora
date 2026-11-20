@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Dashboard · Lumora{% endblock %}
 {% block content %}
-<p class="eyebrow">YOUR PERSONAL SPACE</p>
-<h1>Hi {{ user.name }}, what would you like to explore?</h1>
-<p class="muted">Choose a reading to begin.</p>
+<section class="sky-hero" data-sky>
+  <div class="sky-copy">
+    <p class="sky-greeting" data-greeting>Welcome back</p>
+    <h1>Hi <span class="sky-name">{{ user.name }}</span>, what would you like to explore?</h1>
+    <p class="sky-sub">Choose a reading to begin.<span class="sky-hint"> Move your cursor across the sky to draw a constellation.</span></p>
+  </div>
+  <figure class="moon" data-moon></figure>
+</section>
 <div class="row g-3 feature-grid">
   <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-chat"><div class="feature-top"><span class="feature-icon">◌</span><span class="price-pill">Free</span></div><h2>Chat Analysis</h2><p>Upload a WhatsApp export and see your chat patterns.</p><a class="open-btn" href="/chat">Open</a></article></div>
   <div class="col-12 col-sm-6 col-xl-3"><article class="feature-card feature-tarot"><div class="feature-top"><span class="feature-icon">✧</span><span class="price-pill">Rp10,000 / session</span></div><h2>Tarot</h2><p>Draw cards and read a short interpretation.</p><a class="open-btn" href="/tarot">Open</a></article></div>

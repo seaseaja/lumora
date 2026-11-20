@@ -4,7 +4,7 @@ Aplikasi web FastAPI untuk tarot, Destiny Matrix, Zodiac/Shio, analisis ekspor W
 
 ## Status database
 
-Skema database sudah didefinisikan di `models.py` dan tabel dibuat otomatis saat aplikasi mulai. File `.env` di komputermu sekarang masih menunjuk ke PostgreSQL lokal (`localhost:5432`), jadi proyek **belum tersambung ke Neon**. `.env` tidak diubah; ikuti langkah koneksi di bawah saat database Neon siap.
+Skema database sudah didefinisikan di `models.py` dan tabel dibuat otomatis saat aplikasi mulai. File `.env` lokal sudah menunjuk ke project Neon `lumora` (connection string pooled). Konfigurasi PostgreSQL lokal lama disimpan di `.env.local-backup` (tidak di-commit).
 
 ## Hubungkan database Neon
 
@@ -52,7 +52,19 @@ Importer mencocokkan nama file dengan nama kartu, memperbarui `image_url`, dan m
 
 Folder artwork saat ini dikecualikan dari Git karena PDF sumber hanya mengizinkan penggunaan pribadi. Jangan deploy gambar tersebut tanpa izin penggunaan website. Jika nanti memakai deck berlisensi untuk publikasi, hapus pola gambar dari `.gitignore`, commit artwork berlisensi, lalu jalankan importer pada database deployment. Hosting dengan filesystem sementara juga perlu penyimpanan persisten atau object storage agar gambar tidak hilang saat deploy.
 
-## Deploy contoh: Render + Neon
+## Deploy: Vercel + Neon (dipakai sekarang)
+
+Production: https://lumora-mu-ruddy.vercel.app
+
+- Deploy ulang: `vercel deploy --prod` dari folder ini (project sudah di-link).
+- Environment variable di Vercel (Production): `DATABASE_URL`, `SECRET_KEY` (beda dengan lokal), `COOKIE_SECURE=true`, `GEMINI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`. Ubah lewat `vercel env` atau dashboard.
+- Skema/seed tidak dijalankan otomatis di Vercel. Setelah mengubah model, jalankan `python migrate.py` (dan `python seed.py` bila perlu) dari komputer lokal dengan `.env` yang menunjuk ke Neon.
+- `.vercelignore` mengecualikan `venv`, `.env*`, dan gambar tarot (lisensi pribadi).
+- Avatar disimpan di tabel `user_avatars` (Vercel tidak punya disk permanen).
+- Batas body request Vercel 4,5 MB, jadi upload chat WhatsApp di production maksimal ~4,5 MB (kirim .zip agar lebih kecil).
+- Checkout tetap simulasi demo.
+
+## Deploy alternatif: Render + Neon
 
 1. Push source code ke repository GitHub-mu. Pastikan `.env` tidak pernah masuk commit (`.gitignore` sudah mengecualikannya).
 2. Di Render pilih **New → Web Service**, hubungkan repository, dan isi:

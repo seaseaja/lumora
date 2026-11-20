@@ -48,16 +48,7 @@ html.motion-ready [data-motion-reveal].is-visible {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .card:hover, .chat-visual-card:hover, .chat-person-card:hover,
-  .chat-overview-analysis:hover, .chat-overview-topic-snapshot:hover,
-  .compatibility-interpretation:hover, .matrix-grid article:hover,
-  .profile-details > div:hover, .auth.card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--motion-shadow);
-    border-color: #d2c4f5;
-  }
-
-  .feature-card:hover, .tarot-card:hover, .sign-card:hover {
+  .tarot-pick-card.is-concealed:hover {
     transform: translateY(-6px) rotate(-.35deg);
     box-shadow: var(--motion-shadow);
     border-color: #cbbbf4;

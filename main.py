@@ -14,15 +14,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 
 from database import create_db_and_tables, get_session
-from models import (Arcana, ChatPersonStat, ChatSession, ImlekDate, MatrixReading, Order, Payment,
-                    Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, ZodiacReading,
+from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ImlekDate, MatrixReading, Order, Payment,
+                    Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, UserAvatar, ZodiacReading,
                     ZodiacSign, utcnow)
 from security import audit, csrf_token, hash_password, verify_csrf, verify_password
 
@@ -44,7 +44,10 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 def configured_ai_key() -> str:
     return (os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
 
-app = FastAPI(title="Lumora")
+# Hide the auto-generated API docs in production (COOKIE_SECURE=true means deployed over HTTPS).
+app = FastAPI(title="Lumora", docs_url=None if COOKIE_SECURE else "/docs",
+              redoc_url=None if COOKIE_SECURE else "/redoc",
+              openapi_url=None if COOKIE_SECURE else "/openapi.json")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
@@ -145,9 +148,9 @@ def register(
     session.commit()
     session.refresh(user)
     audit(session, "register", user_id=user.id, request=request)
+    # Registration does not sign the user in: they confirm their password on the login page first.
     request.session.clear()
-    request.session["uid"] = user.id
-    return RedirectResponse("/dashboard", status_code=303)
+    return RedirectResponse("/login?msg=Account%20created.%20Log%20in%20to%20continue.", status_code=303)
 
 
 @app.get("/login")
@@ -254,39 +257,37 @@ async def profile_update(
         else:
             return fail("Use a PNG, JPG, or WebP image.")
 
-    old_avatar = user.avatar_url
-    new_avatar = old_avatar
-    avatar_path = BASE_DIR / "static" / "avatars"
-    created_file = None
+    # Avatars live in the database: serverless hosting (Vercel) has no persistent writable disk.
+    stored = session.get(UserAvatar, user.id)
     if avatar_ext:
-        avatar_path.mkdir(parents=True, exist_ok=True)
-        filename = f"{uuid.uuid4().hex}{avatar_ext}"
-        created_file = avatar_path / filename
-        created_file.write_bytes(avatar_bytes)
-        new_avatar = f"/static/avatars/{filename}"
+        content_type = {".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}[avatar_ext]
+        if stored:
+            stored.data, stored.content_type, stored.updated_at = avatar_bytes, content_type, utcnow()
+        else:
+            stored = UserAvatar(user_id=user.id, content_type=content_type, data=avatar_bytes)
+        session.add(stored)
+        user.avatar_url = f"/avatar/{user.id}?v={uuid.uuid4().hex[:8]}"
     elif remove_avatar == "yes":
-        new_avatar = None
+        if stored:
+            session.delete(stored)
+        user.avatar_url = None
 
     user.name = name
     user.email = email
     user.birth_date = born
-    user.avatar_url = new_avatar
     session.add(user)
-    try:
-        session.commit()
-    except Exception:
-        session.rollback()
-        if created_file:
-            created_file.unlink(missing_ok=True)
-        raise
-
-    if old_avatar and old_avatar != new_avatar and old_avatar.startswith("/static/avatars/"):
-        previous_file = (BASE_DIR / old_avatar.lstrip("/")).resolve()
-        avatar_dir = avatar_path.resolve()
-        if previous_file.parent == avatar_dir:
-            previous_file.unlink(missing_ok=True)
+    session.commit()
 
     return RedirectResponse("/profile?msg=Profile%20updated.", status_code=303)
+
+
+@app.get("/avatar/{user_id}")
+def avatar_image(user_id: int, user=Depends(require_user), session: Session = Depends(get_session)):
+    stored = session.get(UserAvatar, user_id)
+    if not stored or (user_id != user.id and user.role != "admin"):
+        raise HTTPException(status_code=404)
+    return Response(content=stored.data, media_type=stored.content_type,
+                    headers={"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"})
 
 
 @app.get("/dashboard")
@@ -428,7 +429,9 @@ def make_tarot_preview(question: str, reader_id: str, candidate_draws, allow_ai:
         result = json.loads(call_openai(instructions, prompt, 300))
         chosen = result.get("spread")
         preview = str(result.get("preview", "")).strip()
-        if chosen not in TAROT_SPREADS or not preview:
+        # Only paid spreads may come from the AI; "one" unlocks for free and must not be
+        # selectable through prompt injection in the user's question.
+        if chosen not in {"love", "career", "three"} or not preview:
             raise ValueError("Invalid tarot response")
         return chosen, preview[:1200], True
     except (RuntimeError, ValueError, json.JSONDecodeError):
@@ -939,7 +942,7 @@ def sandbox_pay(request: Request, order_id: int, user=Depends(require_user), ses
 
 
 # ---------- WhatsApp parser & reports ----------
-WA_LINE = re.compile(r"^\[?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)\]?\s*(?:-\s*|\s+)([^:]{1,100}):\s?(.*)$")
+WA_LINE = re.compile(r"^\[?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}),?\s+(\d{1,2}[:.]\d{2}(?:[:.]\d{2})?(?:\s?[APap][Mm])?)\]?\s*(?:-\s*|\s+)([^:]{1,100}):\s?(.*)$")
 CHAT_EMOTION_TERMS = {
     "excited": ("😂", "😆", "🎉", "wkwk", "haha", "hehe", "lol", "yay", "excited", "seneng", "senang", "seru", "asik", "mantap", "keren", "happy", "amazing"),
     "angry": ("😡", "🤬", "😠", "angry", "furious", "pissed", "marah", "kesel", "kesal", "jengkel", "sebel", "bete", "benci", "fuck", "shit", "idiot", "tolol"),
@@ -1077,7 +1080,7 @@ def parse_wa_export(raw: str):
     month_first_evidence = 0
     day_first_evidence = 0
     for line in lines:
-        match = WA_LINE.match(line.strip())
+        match = WA_LINE.match(line.lstrip("\u200e\u200f\ufeff").rstrip())
         if not match:
             continue
         first, second = (int(part) for part in re.split(r"[/-]", match.group(1))[:2])
@@ -1088,7 +1091,7 @@ def parse_wa_export(raw: str):
     month_first = month_first_evidence > day_first_evidence
     messages=[]
     for line in lines:
-        match=WA_LINE.match(line.strip())
+        match=WA_LINE.match(line.lstrip("\u200e\u200f\ufeff").rstrip())
         if not match: continue
         daypart, timepart, sender, body=match.groups()
         try:
@@ -1098,7 +1101,7 @@ def parse_wa_export(raw: str):
                        for year in ("%y", "%Y")
                        for clock in ("%H:%M:%S", "%H:%M", "%I:%M:%S %p", "%I:%M %p")]
             for fmt in formats:
-                try: parsed=datetime.strptime(f"{daypart} {timepart.upper()}",fmt); break
+                try: parsed=datetime.strptime(f"{daypart} {timepart.replace('.', ':').upper()}",fmt); break
                 except ValueError: pass
             if parsed: messages.append((parsed, sender.strip(), body.strip()))
         except (ValueError, TypeError): pass
@@ -1266,7 +1269,30 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
 @app.get("/reports")
 def reports_page(request: Request,user=Depends(require_user),session: Session=Depends(get_session)):
     rows=session.exec(select(Reading).where(Reading.user_id==user.id).order_by(Reading.created_at.desc())).all()
-    return render(request,"reports.html",user=user,rows=rows)
+    return render(request,"reports.html",user=user,rows=rows,msg=request.query_params.get("msg"))
+
+
+@app.post("/reports/{reading_id}/delete", dependencies=[Depends(verify_csrf)])
+def report_delete(request: Request, reading_id: int, user=Depends(require_user), session: Session = Depends(get_session)):
+    reading = session.get(Reading, reading_id)
+    if not reading or reading.user_id != user.id:
+        raise HTTPException(status_code=404)
+    # Remove child rows first (FK order). Orders/payments are kept as transaction records.
+    chat = session.exec(select(ChatSession).where(ChatSession.reading_id == reading.id)).first()
+    if chat:
+        for model in (ChatPersonStat, ChatIndicatorScore, ChatSignal):
+            for row in session.exec(select(model).where(model.chat_session_id == chat.id)).all():
+                session.delete(row)
+        session.flush()
+        session.delete(chat)
+    for model in (TarotDraw, MatrixReading, ZodiacReading):
+        for row in session.exec(select(model).where(model.reading_id == reading.id)).all():
+            session.delete(row)
+    session.flush()
+    session.delete(reading)
+    session.commit()
+    audit(session, "reading_deleted", detail=f"reading_id={reading_id}", user_id=user.id, request=request)
+    return RedirectResponse("/reports?msg=Report%20deleted.", status_code=303)
 
 
 @app.get("/reports/{reading_id}")
@@ -1367,6 +1393,140 @@ def report_detail(request: Request,reading_id:int,user=Depends(require_user),ses
     return render(request,"report_detail.html",user=user,reading=reading,chat=chat,stats=stats,chat_chart=chat_chart,matrix_data=matrix_data,zodiac_result=zodiac_result,result=zodiac_result,page_lang="en" if reading.type in {"chat", "zodiac", "compatibility", "matrix"} else "id")
 
 
+# ---------- master: services & prices (admin only) ----------
+SERVICE_CODE = re.compile(r"^[a-z][a-z0-9_]{1,19}$")
+
+
+@app.get("/master/services")
+def services_list(request: Request, edit: int | None = None, msg: str | None = None,
+                  admin=Depends(require_admin), session: Session = Depends(get_session)):
+    services = session.exec(select(Service).order_by(Service.id)).all()
+    used = {sid for sid in session.exec(select(Order.service_id).distinct()).all()}
+    item = session.get(Service, edit) if edit else None
+    return render(request, "master_services.html", user=admin, services=services, used=used,
+                  item=item, msg=msg, error=None)
+
+
+@app.post("/master/services/save", dependencies=[Depends(verify_csrf)])
+def services_save(request: Request, service_id: str = Form(""), code: str = Form(""), name: str = Form(""),
+                  price: str = Form(""), is_active: str = Form(""),
+                  admin=Depends(require_admin), session: Session = Depends(get_session)):
+    code, name = code.strip().lower(), name.strip()
+    service = session.get(Service, int(service_id)) if service_id.isdigit() else None
+    item = {"id": service_id, "code": service.code if service else code, "name": name,
+            "price": price, "is_active": is_active == "yes"}
+
+    def fail(message: str):
+        services = session.exec(select(Service).order_by(Service.id)).all()
+        used = {sid for sid in session.exec(select(Order.service_id).distinct()).all()}
+        return render(request, "master_services.html", status_code=400, user=admin, services=services,
+                      used=used, item=item, msg=None, error=message)
+
+    if service_id and not service:
+        return fail("Service not found.")
+    if not service:  # the code is the key the app uses (tarot, matrix, ...), so it is set once
+        if not SERVICE_CODE.match(code):
+            return fail("Code must be 2-20 lowercase letters, numbers or underscores, starting with a letter.")
+        if session.exec(select(Service).where(Service.code == code)).first():
+            return fail("A service with this code already exists.")
+    if not 1 <= len(name) <= 100:
+        return fail("Name must be 1 to 100 characters.")
+    if not price.strip().isdigit() or int(price) > 100_000_000:
+        return fail("Price must be a whole number of rupiah between 0 and 100,000,000.")
+    if service:
+        service.name, service.price, service.is_active = name, int(price), is_active == "yes"
+        text = "Service updated"
+    else:
+        service = Service(code=code, name=name, price=int(price), is_active=is_active == "yes")
+        text = "Service added"
+    session.add(service)
+    session.commit()
+    audit(session, "master_service_saved", detail=f"{service.code} price={service.price}", user_id=admin.id, request=request)
+    return RedirectResponse(f"/master/services?msg={text}", status_code=303)
+
+
+@app.post("/master/services/{service_id}/delete", dependencies=[Depends(verify_csrf)])
+def services_delete(request: Request, service_id: int, admin=Depends(require_admin), session: Session = Depends(get_session)):
+    service = session.get(Service, service_id)
+    if not service:
+        return RedirectResponse("/master/services", status_code=303)
+    if session.exec(select(Order).where(Order.service_id == service.id)).first():
+        return RedirectResponse("/master/services?msg=This service has orders, so it was not deleted. Turn it off instead.", status_code=303)
+    session.delete(service)
+    session.commit()
+    audit(session, "master_service_deleted", detail=service.code, user_id=admin.id, request=request)
+    return RedirectResponse("/master/services?msg=Service deleted", status_code=303)
+
+
+# ---------- report: sales (admin only) ----------
+WIB = timedelta(hours=7)  # timestamps are stored in UTC; reports use Indonesian time (WIB)
+
+
+def sales_rows(session: Session, start: date, end: date, status: str):
+    # A WIB calendar day runs from 17:00 UTC the day before.
+    query = (select(Order, Service, User).join(Service, Service.id == Order.service_id)
+             .join(User, User.id == Order.user_id)
+             .where(Order.created_at >= datetime.combine(start, datetime.min.time()) - WIB,
+                    Order.created_at < datetime.combine(end + timedelta(days=1), datetime.min.time()) - WIB)
+             .order_by(Order.created_at.desc()))
+    if status != "all":
+        query = query.where(Order.status == status)
+    return session.exec(query).all()
+
+
+def report_period(start: str, end: str):
+    today = (utcnow() + WIB).date()
+    try:
+        first = date.fromisoformat(start) if start else today.replace(day=1)
+        last = date.fromisoformat(end) if end else today
+    except ValueError:
+        first, last = today.replace(day=1), today
+    return (first, last) if first <= last else (last, first)
+
+
+@app.get("/admin/sales")
+def sales_report(request: Request, start: str = "", end: str = "", status: str = "all",
+                 admin=Depends(require_admin), session: Session = Depends(get_session)):
+    first, last = report_period(start, end)
+    status = status if status in {"all", "paid", "pending", "expired", "failed", "cancelled"} else "all"
+    rows = sales_rows(session, first, last, status)
+    by_service = {}
+    for order, service, _ in rows:
+        bucket = by_service.setdefault(service.name, {"orders": 0, "paid": 0, "revenue": 0})
+        bucket["orders"] += 1
+        if order.status == "paid":
+            bucket["paid"] += 1
+            bucket["revenue"] += order.amount
+    totals = {
+        "orders": len(rows),
+        "paid": sum(1 for order, _, _ in rows if order.status == "paid"),
+        "revenue": sum(order.amount for order, _, _ in rows if order.status == "paid"),
+        "customers": len({user.id for _, _, user in rows}),
+    }
+    totals["conversion"] = round(totals["paid"] * 100 / totals["orders"]) if totals["orders"] else 0
+    return render(request, "report_sales.html", user=admin, rows=rows, by_service=by_service, totals=totals,
+                  start=first, end=last, status=status, generated=utcnow() + WIB, wib=WIB)
+
+
+@app.get("/admin/sales.csv")
+def sales_report_csv(start: str = "", end: str = "", status: str = "all",
+                     admin=Depends(require_admin), session: Session = Depends(get_session)):
+    import csv
+    from io import StringIO
+    first, last = report_period(start, end)
+    status = status if status in {"all", "paid", "pending", "expired", "failed", "cancelled"} else "all"
+    out = StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["order_code", "created_at_wib", "paid_at_wib", "customer", "email", "service", "amount", "status"])
+    for order, service, user in sales_rows(session, first, last, status):
+        writer.writerow([order.order_code, (order.created_at + WIB).isoformat(sep=" ", timespec="seconds"),
+                         (order.paid_at + WIB).isoformat(sep=" ", timespec="seconds") if order.paid_at else "",
+                         user.name, user.email, service.name, order.amount, order.status])
+    filename = f"lumora-sales-{first.isoformat()}-to-{last.isoformat()}.csv"
+    return Response(content="﻿" + out.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
 # ---------- master: tarot cards (admin only) ----------
 @app.get("/master/tarot")
 def tarot_list(
@@ -1428,6 +1588,8 @@ def tarot_save(
 @app.post("/master/tarot/{card_id}/delete", dependencies=[Depends(verify_csrf)])
 def tarot_delete(request: Request, card_id: int, admin=Depends(require_admin), session: Session = Depends(get_session)):
     card = session.get(TarotCard, card_id)
+    if card and session.exec(select(TarotDraw).where(TarotDraw.card_id == card.id)).first():
+        return RedirectResponse("/master/tarot?msg=Card is used in saved readings and cannot be deleted", status_code=303)
     if card:
         session.delete(card)
         session.commit()
