@@ -58,3 +58,44 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;colo
 @media(max-width:991.98px){.mobile-topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid #eee9f5;position:sticky;top:0;z-index:20}.mobile-topbar .brand{font-size:21px;font-weight:700;letter-spacing:-.05em;color:var(--ink);text-decoration:none}.mobile-menu-toggle{width:42px;height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid var(--bd);border-radius:13px;background:#fff;cursor:pointer}.mobile-menu-toggle span{width:17px;height:2px;border-radius:2px;background:var(--pri)}.sidebar.offcanvas-lg{position:fixed;inset:0 auto 0 0;width:260px;max-width:85vw;height:100vh;padding:18px 17px;display:flex;flex-direction:column;grid-template-columns:none;gap:0;overflow-y:auto;z-index:1055;background:#fff}.sidebar.offcanvas-lg .offcanvas-header{display:flex;justify-content:space-between;align-items:center;padding:5px 8px 16px}.sidebar.offcanvas-lg .offcanvas-title{font-size:16px;margin:0}.sidebar.offcanvas-lg .brand{display:block;grid-column:auto;padding:3px 12px 25px;font-size:23px}.sidebar.offcanvas-lg .side-label{display:block;font-size:10px;margin:16px 12px 7px}.sidebar.offcanvas-lg .side-link{display:flex;flex-direction:row;justify-content:flex-start;gap:13px;padding:10px 12px;font-size:13px;text-align:left}.sidebar.offcanvas-lg .side-logout{grid-column:auto;margin-top:auto}.sidebar.offcanvas-lg .side-logout button{font-size:13px;text-align:left}.sidebar.offcanvas-lg .side-user{grid-column:auto;justify-content:flex-start;border-top:1px solid var(--bd);padding:16px 7px 3px;margin-top:9px}.main-column{margin-left:0}.main-column .wrap{padding:30px 24px 55px}}
 .zodiac-sign-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:24px 0}.zodiac-sign-card{position:relative;min-height:185px;margin:0;padding:25px;overflow:hidden}.zodiac-western-card{background:linear-gradient(140deg,#f4f0ff,#fff)}.zodiac-shio-card{background:linear-gradient(140deg,#edf7f4,#fff)}.zodiac-card-label{display:block;color:var(--pri);font-size:10px;font-weight:700;letter-spacing:.13em}.zodiac-sign-card h2{margin:13px 0 4px;font-size:26px;letter-spacing:-.035em}.zodiac-sign-card p{margin:9px 0 0;color:#625c75;font-size:13px}.zodiac-sign-card .zodiac-element{margin-top:0;color:var(--pri);font-size:12px;font-weight:600}.zodiac-kua{margin:0 0 18px;padding:24px}.zodiac-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.zodiac-section-heading h2{margin:5px 0 0;font-size:19px}.zodiac-method-tag{padding:7px 11px;border-radius:999px;background:#f0ecff;color:var(--pri-dark);font-size:11px;font-weight:600;white-space:nowrap}.zodiac-kua-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:14px}.zodiac-kua-profile{padding:17px;border:1px solid var(--bd);border-radius:16px;background:#fcfbff}.zodiac-kua-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.zodiac-kua-heading span{color:var(--muted);font-size:11px}.zodiac-kua-heading h3{margin:2px 0 0;font-size:20px}.zodiac-kua-heading>b{padding:5px 9px;border-radius:999px;background:#eee9ff;color:var(--pri-dark);font-size:10px}.zodiac-direction-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.zodiac-direction-list>div{display:flex;flex-direction:column;gap:4px;padding:11px;border-radius:11px;background:#fff;border:1px solid #f0edf5}.zodiac-direction-list span{color:var(--muted);font-size:10px;line-height:1.35}.zodiac-direction-list b{font-size:13px;color:var(--ink)}.zodiac-boundary-note{padding:11px 13px;border-radius:11px;background:#fff7e8;color:#795d25;font-size:12px}.zodiac-method-note{margin:15px 0 0;color:var(--muted);font-size:11px;line-height:1.65}.zodiac-future{padding:27px;background:linear-gradient(145deg,#fff,#faf8ff)}.zodiac-future>h2{margin:9px 0 12px;font-size:24px;letter-spacing:-.035em}.zodiac-personal-note{max-width:880px;margin:0 0 20px;padding:13px 16px;border-left:3px solid #a895f2;border-radius:0 12px 12px 0;background:#f6f3ff;color:#554d70;font-size:13px;line-height:1.65}.zodiac-future-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.zodiac-future-grid article{padding:17px;border:1px solid var(--bd);border-radius:15px;background:#fff}.zodiac-future-grid h3{margin:0 0 7px;color:var(--pri-dark);font-size:14px}.zodiac-future-grid p{margin:0;color:#625c75;font-size:12px;line-height:1.75}.zodiac-future-grid .zodiac-caution{background:#fffaf4}.zodiac-disclaimer{margin:17px 0 0;color:var(--muted);font-size:11px;line-height:1.65}
 @media(max-width:680px){.zodiac-sign-grid,.zodiac-future-grid{grid-template-columns:1fr}.zodiac-sign-card{min-height:0;padding:22px}.zodiac-section-heading{align-items:flex-start;flex-direction:column}.zodiac-kua-grid{grid-template-columns:1fr}.zodiac-kua{padding:19px}.zodiac-future{padding:22px}}
+/* Eight Mansions detail */
+.zodiac-kua-grid{grid-template-columns:1fr}
+.kua-overview{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:center;margin:4px 0 20px}
+.kua-compass{width:100%;max-width:220px;height:auto}
+.kua-wedge{stroke:#fff;stroke-width:2}
+.kua-good.kua-rank-1{fill:#5fb592}.kua-good.kua-rank-2{fill:#7cc4a6}.kua-good.kua-rank-3{fill:#9ad2ba}.kua-good.kua-rank-4{fill:#b9e0cf}
+.kua-bad.kua-rank-1{fill:#f6d9cf}.kua-bad.kua-rank-2{fill:#f1c3b4}.kua-bad.kua-rank-3{fill:#eaa993}.kua-bad.kua-rank-4{fill:#e08d73}
+.kua-wedge-label{font-size:11px;font-weight:700;fill:#2d2840;text-anchor:middle;dominant-baseline:middle}
+.kua-wedge-rank{font-size:9px;font-weight:600;fill:#2d2840;opacity:.75;text-anchor:middle;dominant-baseline:middle}
+.kua-core{fill:#f0ecff;stroke:#d8d0fb}
+.kua-core-num{font-size:22px;font-weight:700;fill:var(--pri-dark);text-anchor:middle;dominant-baseline:middle}
+.kua-core-label{font-size:7px;letter-spacing:.15em;fill:var(--muted);text-anchor:middle;dominant-baseline:middle}
+.kua-overview-copy p{margin:0 0 9px;color:#625c75;font-size:13px;line-height:1.65}
+.kua-overview-copy .kua-element{color:var(--pri);font-size:12px;font-weight:600}
+.kua-legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:11px}
+.kua-legend span{display:flex;align-items:center;gap:6px}
+.kua-legend i{display:inline-block;width:12px;height:12px;border-radius:3px}
+.kua-legend i.kua-good{background:#5fb592}.kua-legend i.kua-bad{background:#e08d73}
+.kua-subhead{margin:20px 0 10px;font-size:14px;color:var(--ink)}
+.kua-direction-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kua-direction{padding:14px 15px;border:1px solid #dcefe6;border-radius:13px;background:#fff}
+.kua-direction-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.kua-direction-top b{display:block;font-size:16px;color:var(--ink)}
+.kua-direction-top small{color:var(--muted);font-size:10px}
+.kua-rank{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:9px;background:#e4f4ec;color:#2f7a5a;font-size:12px;font-weight:700}
+.kua-rank-bad{background:#fbe7e0;color:#a2492d}
+.kua-direction h5{margin:0 0 3px;font-size:13px;color:#2f7a5a}
+.kua-direction p{margin:0 0 7px;color:#625c75;font-size:12px;line-height:1.65}
+.kua-direction .kua-chinese{color:var(--muted);font-size:11px}
+.kua-direction .kua-use{margin:0;padding:8px 10px;border-radius:9px;background:#f4faf7}
+.kua-avoid-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kua-avoid-list>div{display:flex;gap:10px;padding:11px 12px;border:1px solid #f4e2db;border-radius:12px;background:#fffaf8}
+.kua-avoid-list b{display:block;font-size:12px;color:var(--ink)}
+.kua-avoid-list small{display:block;color:var(--muted);font-size:10px;margin:2px 0 4px}
+.kua-avoid-list p{margin:0;color:#625c75;font-size:11.5px;line-height:1.55}
+.kua-avoid-tip{margin:10px 0 0;color:#795d25;background:#fff7e8;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.6}
+.kua-howto{margin-top:18px;padding:16px 18px;border:1px solid var(--bd);border-radius:14px;background:#fcfbff}
+.kua-howto .kua-subhead{margin-top:0}
+.kua-howto ol{margin:0;padding-left:20px;color:#625c75;font-size:12.5px;line-height:1.7}
+.kua-howto li{margin-bottom:5px}
+@media(max-width:680px){.kua-overview{grid-template-columns:1fr;justify-items:center}.kua-overview-copy{justify-self:stretch}.kua-direction-cards,.kua-avoid-list{grid-template-columns:1fr}}

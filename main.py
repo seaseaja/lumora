@@ -659,6 +659,120 @@ KUA_DIRECTIONS = {
 }
 
 
+# Unfavourable directions per Kua, in Ba Zhai order: Huo Hai, Wu Gui, Liu Sha, Jue Ming.
+KUA_UNFAVORABLE = {
+    1: {"mishaps": "West", "five_ghosts": "Northeast", "six_killings": "Northwest", "total_loss": "Southwest"},
+    2: {"mishaps": "East", "five_ghosts": "Southeast", "six_killings": "South", "total_loss": "North"},
+    3: {"mishaps": "Southwest", "five_ghosts": "Northwest", "six_killings": "Northeast", "total_loss": "West"},
+    4: {"mishaps": "Northwest", "five_ghosts": "Southwest", "six_killings": "West", "total_loss": "Northeast"},
+    6: {"mishaps": "Southeast", "five_ghosts": "East", "six_killings": "North", "total_loss": "South"},
+    7: {"mishaps": "North", "five_ghosts": "South", "six_killings": "Southeast", "total_loss": "East"},
+    8: {"mishaps": "South", "five_ghosts": "North", "six_killings": "East", "total_loss": "Southeast"},
+    9: {"mishaps": "Northeast", "five_ghosts": "West", "six_killings": "Southwest", "total_loss": "Northwest"},
+}
+
+KUA_PROFILES = {
+    1: {"trigram": "Kan", "image": "Water", "element": "Water",
+        "summary": "Kan, the flowing water, is linked with adaptability, depth, and quiet perseverance. Kua 1 people are traditionally described as reflective and resourceful, finding their way around obstacles instead of forcing through them."},
+    2: {"trigram": "Kun", "image": "Earth", "element": "Earth",
+        "summary": "Kun, the receptive earth, is linked with nurturing, patience, and reliability. Kua 2 people are traditionally described as supportive and steady, building results through consistency and care for others."},
+    3: {"trigram": "Zhen", "image": "Thunder", "element": "Wood",
+        "summary": "Zhen, the arousing thunder, is linked with new beginnings, energy, and initiative. Kua 3 people are traditionally described as driven and quick to act, with a strong urge to start, grow, and move things forward."},
+    4: {"trigram": "Xun", "image": "Wind", "element": "Wood",
+        "summary": "Xun, the gentle wind, is linked with gradual influence, communication, and growth. Kua 4 people are traditionally described as diplomatic and persuasive, making progress through steady, gentle effort."},
+    6: {"trigram": "Qian", "image": "Heaven", "element": "Metal",
+        "summary": "Qian, the creative heaven, is linked with leadership, structure, and responsibility. Kua 6 people are traditionally described as principled and decisive, comfortable taking charge and setting direction."},
+    7: {"trigram": "Dui", "image": "Lake", "element": "Metal",
+        "summary": "Dui, the joyful lake, is linked with expression, charm, and enjoyment. Kua 7 people are traditionally described as sociable and articulate, drawing people together through warmth and conversation."},
+    8: {"trigram": "Gen", "image": "Mountain", "element": "Earth",
+        "summary": "Gen, the still mountain, is linked with stability, knowledge, and inner calm. Kua 8 people are traditionally described as grounded and thoughtful, valuing patience, learning, and steady accumulation."},
+    9: {"trigram": "Li", "image": "Fire", "element": "Fire",
+        "summary": "Li, the clinging fire, is linked with clarity, visibility, and passion. Kua 9 people are traditionally described as bright and expressive, motivated by recognition and by bringing ideas into the light."},
+}
+
+KUA_GROUP_INFO = {
+    "East Group": {"kuas": "1, 3, 4 and 9", "directions": "North, South, East and Southeast",
+                   "homes": "homes that sit in (back toward) North, South, East or Southeast"},
+    "West Group": {"kuas": "2, 6, 7 and 8", "directions": "West, Northwest, Southwest and Northeast",
+                   "homes": "homes that sit in (back toward) West, Northwest, Southwest or Northeast"},
+}
+
+COMPASS_RANGES = {
+    "North": "337.5°–22.5°", "Northeast": "22.5°–67.5°", "East": "67.5°–112.5°", "Southeast": "112.5°–157.5°",
+    "South": "157.5°–202.5°", "Southwest": "202.5°–247.5°", "West": "247.5°–292.5°", "Northwest": "292.5°–337.5°",
+}
+COMPASS_ORDER = ["North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest"]
+COMPASS_SHORT = {"North": "N", "Northeast": "NE", "East": "E", "Southeast": "SE",
+                 "South": "S", "Southwest": "SW", "West": "W", "Northwest": "NW"}
+
+KUA_FAVORABLE_MEANINGS = [
+    {"key": "wealth", "rank": 1, "title": "Wealth & success", "chinese": "Sheng Qi · 生气", "literal": "Generating breath",
+     "meaning": "Your strongest direction. It is associated with growth, opportunity, recognition, and financial progress, and is traditionally used for anything tied to ambition and income.",
+     "use": "Face this way while working, studying, negotiating, or doing interviews and video calls. A front door or desk facing this direction is considered ideal."},
+    {"key": "health", "rank": 2, "title": "Health & support", "chinese": "Tian Yi · 天医", "literal": "Heavenly doctor",
+     "meaning": "The direction of physical wellbeing, recovery, and help from others. It is associated with energy, healing, and finding mentors or supportive people.",
+     "use": "Sleep with the top of your head pointing this way, and use it for eating, resting, and recovering. Helpful during illness or a stressful period."},
+    {"key": "relationships", "rank": 3, "title": "Relationships & harmony", "chinese": "Yan Nian · 延年", "literal": "Prolonged years",
+     "meaning": "The direction of love, family harmony, friendship, and long-lasting connection. It is associated with smoother communication and reconciliation.",
+     "use": "Use it for the headboard in a couple's bedroom, the dining or family table, and important personal conversations."},
+    {"key": "focus", "rank": 4, "title": "Personal growth & stability", "chinese": "Fu Wei · 伏位", "literal": "Stable position",
+     "meaning": "Your home direction: calm, clarity, self-development, and inner peace. It is associated with steady progress rather than big leaps.",
+     "use": "Face this way for meditation, prayer, reading, learning, exams, and decisions that need a clear mind."},
+]
+
+KUA_UNFAVORABLE_MEANINGS = [
+    {"key": "mishaps", "rank": 1, "title": "Mishaps", "chinese": "Huo Hai · 祸害", "literal": "Accidents and mishaps",
+     "meaning": "The mildest unfavourable direction, linked with small setbacks, arguments, and plans that do not quite work out."},
+    {"key": "five_ghosts", "rank": 2, "title": "Five ghosts", "chinese": "Wu Gui · 五鬼", "literal": "Five ghosts",
+     "meaning": "Linked with gossip, misunderstandings, money lost through carelessness, and restlessness."},
+    {"key": "six_killings", "rank": 3, "title": "Six killings", "chinese": "Liu Sha · 六煞", "literal": "Six killings",
+     "meaning": "Linked with conflict, scandal, legal or relationship trouble, and poor decisions."},
+    {"key": "total_loss", "rank": 4, "title": "Total loss", "chinese": "Jue Ming · 绝命", "literal": "Total loss",
+     "meaning": "The most unfavourable direction, traditionally linked with serious setbacks in health, wealth, or relationships."},
+]
+
+
+def kua_detail(number: int, formula: str) -> dict:
+    directions = KUA_DIRECTIONS[number]
+    unfavorable = KUA_UNFAVORABLE[number]
+    group = "East Group" if number in (1, 3, 4, 9) else "West Group"
+    role = {}
+    for item in KUA_FAVORABLE_MEANINGS:
+        role[directions[item["key"]]] = ("good", item["rank"], item["title"])
+    for item in KUA_UNFAVORABLE_MEANINGS:
+        role[unfavorable[item["key"]]] = ("bad", item["rank"], item["title"])
+    return {
+        "formula": formula.title(), "number": number, "group": group, "directions": directions,
+        "profile": KUA_PROFILES[number], "group_info": KUA_GROUP_INFO[group],
+        "favorable": [dict(item, direction=directions[item["key"]], degrees=COMPASS_RANGES[directions[item["key"]]])
+                      for item in KUA_FAVORABLE_MEANINGS],
+        "unfavorable": [dict(item, direction=unfavorable[item["key"]], degrees=COMPASS_RANGES[unfavorable[item["key"]]])
+                        for item in KUA_UNFAVORABLE_MEANINGS],
+        "compass": [dict({"name": name, "short": COMPASS_SHORT[name],
+                          "kind": role[name][0], "rank": role[name][1], "title": role[name][2]},
+                         **compass_wedge(index * 45))
+                    for index, name in enumerate(COMPASS_ORDER)],
+    }
+
+
+def compass_wedge(center_deg: float, inner: float = 34, outer: float = 96) -> dict:
+    """SVG path for one 45° compass sector (0° = North/up) plus label positions, centred on 100,100."""
+    import math
+
+    def point(radius, deg):
+        rad = math.radians(deg - 90)
+        return 100 + radius * math.cos(rad), 100 + radius * math.sin(rad)
+
+    a, b = center_deg - 22.5, center_deg + 22.5
+    (x1, y1), (x2, y2) = point(outer, a), point(outer, b)
+    (x3, y3), (x4, y4) = point(inner, b), point(inner, a)
+    lx, ly = point(75, center_deg)
+    rx, ry = point(53, center_deg)
+    return {"path": f"M{x1:.1f},{y1:.1f} A{outer},{outer} 0 0 1 {x2:.1f},{y2:.1f} "
+                    f"L{x3:.1f},{y3:.1f} A{inner},{inner} 0 0 0 {x4:.1f},{y4:.1f} Z",
+            "lx": round(lx, 1), "ly": round(ly, 1), "rx": round(rx, 1), "ry": round(ry, 1)}
+
+
 def chinese_year_element(year: int) -> str:
     # Jia/Yi = Wood, Bing/Ding = Fire, Wu/Ji = Earth, Geng/Xin = Metal, Ren/Gui = Water.
     stem_index = (year - 4) % 10
@@ -687,12 +801,7 @@ def make_zodiac_result(born: date, sign: ZodiacSign, shio: ShioAnimal, shio_year
     shio_quality = SHIO_TRAITS_ID.get(shio.name, "")
     solar_year = born.year - 1 if (born.month, born.day) < (2, 4) else born.year
     formulas = ["male", "female"] if kua_formula == "both" else [kua_formula]
-    kua_profiles = [
-        {"formula": formula.title(), "number": kua_number(solar_year, formula),
-         "group": "East Group" if kua_number(solar_year, formula) in (1, 3, 4, 9) else "West Group",
-         "directions": KUA_DIRECTIONS[kua_number(solar_year, formula)]}
-        for formula in formulas
-    ]
+    kua_profiles = [kua_detail(kua_number(solar_year, formula), formula) for formula in formulas]
     return {
         "date": born,
         "sign": sign,

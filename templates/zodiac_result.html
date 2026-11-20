@@ -22,17 +22,62 @@
   <div class="zodiac-kua-grid">
     {% for profile in result.kua_profiles %}
     <article class="zodiac-kua-profile">
-      <div class="zodiac-kua-heading"><div><span>{{ profile.formula }} formula</span><h3>Kua {{ profile.number }}</h3></div><b>{{ profile.group }}</b></div>
-      <div class="zodiac-direction-list">
-        <div><span>Wealth & success</span><b>{{ profile.directions.wealth }}</b></div>
-        <div><span>Health & support</span><b>{{ profile.directions.health }}</b></div>
-        <div><span>Relationships</span><b>{{ profile.directions.relationships }}</b></div>
-        <div><span>Focus & stability</span><b>{{ profile.directions.focus }}</b></div>
+      <div class="zodiac-kua-heading"><div><span>{{ profile.formula }} formula</span><h3>Kua {{ profile.number }} · {{ profile.profile.trigram }} ({{ profile.profile.image }})</h3></div><b>{{ profile.group }}</b></div>
+
+      <div class="kua-overview">
+        <svg class="kua-compass" viewBox="0 0 200 200" role="img" aria-label="Compass for Kua {{ profile.number }}: {% for c in profile.compass %}{{ c.name }} {{ c.title }}{% if not loop.last %}, {% endif %}{% endfor %}">
+          {% for c in profile.compass %}
+          <path d="{{ c.path }}" class="kua-wedge kua-{{ c.kind }} kua-rank-{{ c.rank }}"><title>{{ c.name }} · {{ c.title }}</title></path>
+          <text x="{{ c.lx }}" y="{{ c.ly }}" class="kua-wedge-label">{{ c.short }}</text>
+          <text x="{{ c.rx }}" y="{{ c.ry }}" class="kua-wedge-rank">{% if c.kind == 'good' %}+{{ c.rank }}{% else %}−{{ c.rank }}{% endif %}</text>
+          {% endfor %}
+          <circle cx="100" cy="100" r="30" class="kua-core"/>
+          <text x="100" y="97" class="kua-core-num">{{ profile.number }}</text>
+          <text x="100" y="112" class="kua-core-label">KUA</text>
+        </svg>
+        <div class="kua-overview-copy">
+          <p class="kua-element"><b>{{ profile.profile.element }}</b> element · trigram {{ profile.profile.trigram }}</p>
+          <p>{{ profile.profile.summary }}</p>
+          <p><b>{{ profile.group }}:</b> Kua {{ profile.group_info.kuas }} share the same four supportive directions ({{ profile.group_info.directions }}). Traditionally, {{ profile.group_info.homes }} suit this group best.</p>
+          <div class="kua-legend"><span><i class="kua-good"></i>Supportive (+1 strongest)</span><span><i class="kua-bad"></i>Unfavourable (−4 weakest)</span></div>
+        </div>
       </div>
+
+      <h4 class="kua-subhead">Your four supportive directions</h4>
+      <div class="kua-direction-cards">
+        {% for d in profile.favorable %}
+        <section class="kua-direction kua-direction-good">
+          <div class="kua-direction-top"><span class="kua-rank">+{{ d.rank }}</span><div><b>{{ d.direction }}</b><small>{{ d.degrees }}</small></div></div>
+          <h5>{{ d.title }}</h5>
+          <p class="kua-chinese">{{ d.chinese }} — “{{ d.literal }}”</p>
+          <p>{{ d.meaning }}</p>
+          <p class="kua-use"><b>How to use it:</b> {{ d.use }}</p>
+        </section>
+        {% endfor %}
+      </div>
+
+      <h4 class="kua-subhead">Directions to avoid where you can</h4>
+      <div class="kua-avoid-list">
+        {% for d in profile.unfavorable %}
+        <div><span class="kua-rank kua-rank-bad">−{{ d.rank }}</span><div><b>{{ d.direction }} · {{ d.title }}</b><small>{{ d.chinese }} · {{ d.degrees }}</small><p>{{ d.meaning }}</p></div></div>
+        {% endfor %}
+      </div>
+      <p class="kua-avoid-tip">These directions are traditionally used for storage, bathrooms, laundry, or the kitchen stove, so the space is not wasted. Avoid facing them for long periods at your desk or sleeping with your head toward them.</p>
     </article>
     {% endfor %}
   </div>
-  <p class="zodiac-method-note">Method: the Eight Mansions system derives a personal Kua number from the solar birth year and the selected traditional formula, then maps it to four supportive compass directions. Use a compass to orient your desk or bed. This method does not calculate auspicious calendar days or evaluate a home's layout.</p>
+
+  <div class="kua-howto">
+    <h4 class="kua-subhead">How to apply your directions</h4>
+    <ol>
+      <li><b>Find true directions.</b> Use a phone compass app away from metal and electronics. Stand in the middle of the room, or at your desk, and note where North is.</li>
+      <li><b>Desk & work:</b> sit so that you <em>face</em> your +1 direction (or +4 for study). Your face points the way, not your back.</li>
+      <li><b>Bed:</b> place the bed so the <em>top of your head</em> points toward your +2 direction (or +3 for couples) while you sleep.</li>
+      <li><b>Front door:</b> a main door that faces one of your supportive directions is considered favourable.</li>
+      <li><b>If the ideal is not possible,</b> use any supportive direction in order +1 → +4. Any supportive direction is better than an unfavourable one, and a comfortable, practical layout matters more than a perfect angle.</li>
+    </ol>
+  </div>
+  <p class="zodiac-method-note">Method: the Eight Mansions (Ba Zhai) system derives a personal Kua number from the solar birth year and the selected traditional formula, then maps it to four supportive and four unfavourable compass directions. Each direction covers a 45° sector. This method does not calculate auspicious calendar days or evaluate a whole home's layout, and it is a traditional practice for reflection, not a guarantee of results.</p>
 </section>
 
 <section class="card zodiac-future">
