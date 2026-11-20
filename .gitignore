@@ -7,3 +7,6 @@ static/tarot_cards/*.png
 static/tarot_cards/*.jpg
 static/tarot_cards/*.jpeg
 static/tarot_cards/*.webp
+.env.*-backup
+sampel-chat/
+colab/sample_chat_messages.csv
