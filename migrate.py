@@ -19,9 +19,9 @@ ALTERS = [
     "CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_order_code ON orders (order_code)",
 ]
 
+create_db_and_tables()  # bikin tabel-tabel baru dulu (database kosong seperti Neon baru)
+
 with engine.begin() as conn:
     for stmt in ALTERS:
         conn.execute(text(stmt))
-
-create_db_and_tables()  # bikin tabel-tabel baru
 print("Migrasi selesai.")

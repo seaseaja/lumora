@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Sales Report · Lumora{% endblock %}
+{% block content %}
+<div class="report-head">
+  <div>
+    <h1>Sales Report</h1>
+    <p class="muted mb-0">{{ start.strftime('%d %b %Y') }} to {{ end.strftime('%d %b %Y') }}{% if status != 'all' %}, {{ status }} orders only{% endif %}. Payments are a sandbox demo.</p>
+  </div>
+  <div class="report-actions no-print">
+    <a class="btn btn-ghost" href="/admin/sales.csv?start={{ start }}&end={{ end }}&status={{ status }}">Download CSV</a>
+    <button class="btn" type="button" onclick="window.print()">Print report</button>
+  </div>
+</div>
+
+<form class="card report-filter no-print" method="get" action="/admin/sales">
+  <label>From<input type="date" name="start" value="{{ start }}"></label>
+  <label>To<input type="date" name="end" value="{{ end }}"></label>
+  <label>Status
+    <select name="status">
+      {% for s in ['all', 'paid', 'pending', 'expired', 'failed', 'cancelled'] %}<option value="{{ s }}" {{ 'selected' if s == status }}>{{ s|capitalize }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn" type="submit">Show report</button>
+</form>
+
+<div class="stats-grid report-stats">
+  <article><b>{{ totals.orders }}</b><span>orders</span><p>Created in this period</p></article>
+  <article><b>{{ totals.paid }}</b><span>paid</span><p>{{ totals.conversion }}% of orders were paid</p></article>
+  <article><b class="price">Rp{{ '{:,}'.format(totals.revenue) }}</b><span>revenue</span><p>From paid orders only</p></article>
+  <article><b>{{ totals.customers }}</b><span>customers</span><p>Placed at least one order</p></article>
+</div>
+
+<section class="card">
+  <h2>By service</h2>
+  <table>
+    <thead><tr><th>Service</th><th>Orders</th><th>Paid</th><th>Revenue</th></tr></thead>
+    <tbody>
+    {% for name, s in by_service.items() %}
+      <tr><td>{{ name }}</td><td>{{ s.orders }}</td><td>{{ s.paid }}</td><td>Rp{{ '{:,}'.format(s.revenue) }}</td></tr>
+    {% else %}
+      <tr><td colspan="4" class="muted">No orders in this period. Try a wider date range.</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if by_service %}<tfoot><tr><th>Total</th><th>{{ totals.orders }}</th><th>{{ totals.paid }}</th><th>Rp{{ '{:,}'.format(totals.revenue) }}</th></tr></tfoot>{% endif %}
+  </table>
+</section>
+
+<section class="card">
+  <h2>Order details</h2>
+  <table>
+    <thead><tr><th>Order</th><th>Date (WIB)</th><th>Customer</th><th>Service</th><th>Amount</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for order, service, customer in rows %}
+      <tr>
+        <td>{{ order.order_code }}</td>
+        <td>{{ (order.created_at + wib).strftime('%d %b %Y %H:%M') }}</td>
+        <td>{{ customer.name }}<br><small class="muted">{{ customer.email }}</small></td>
+        <td>{{ service.name }}</td>
+        <td>Rp{{ '{:,}'.format(order.amount) }}</td>
+        <td><span class="status-pill is-{{ order.status }}">{{ order.status|capitalize }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">No orders match these filters.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<p class="muted small">Generated {{ generated.strftime('%d %b %Y %H:%M') }} WIB by {{ user.name }}.</p>
+{% endblock %}

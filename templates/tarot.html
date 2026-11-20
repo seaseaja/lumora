@@ -50,7 +50,7 @@
   <p class="tarot-disclaimer">Tarot is for reflection and entertainment. It is not a prediction or a substitute for professional advice.</p>
 
   {% else %}
-  <div class="tarot-hero"><div class="tarot-hero-copy"><span class="tarot-orb">✦</span><div><p class="eyebrow">PAUSE · BREATHE · BEGIN</p><h1>What’s on your mind?</h1><p>Share what you’re thinking about. Your question guides the cards and the kind of reflection you receive.</p><div class="tarot-trust"><span>✦ A private reading</span><span>✦ Your question, your spread</span><span>✦ Save it to My Readings</span></div></div></div>
+  <div class="tarot-hero"><div class="tarot-hero-copy" data-sky="light"><span class="tarot-orb">✦</span><div><p class="eyebrow">PAUSE · BREATHE · BEGIN</p><h1>What’s on your mind?</h1><p>Share what you’re thinking about. Your question guides the cards and the kind of reflection you receive.</p><div class="tarot-trust"><span>✦ A private reading</span><span>✦ Your question, your spread</span><span>✦ Save it to My Readings</span></div></div></div>
     <form class="tarot-question-form" method="post" action="/tarot/draw">
       <input type="hidden" name="csrf_token" value="{{ csrf }}">
       <label for="question">Your question</label>
@@ -71,7 +71,7 @@
         <label class="reader-option"><input type="radio" name="reader" value="wise"><span><b>The Old Soul</b><small>Patient and reflective</small></span></label>
         <label class="reader-option"><input type="radio" name="reader" value="curious"><span><b>The Curious Mind</b><small>Explores a few perspectives</small></span></label>
       </div></div>
-      {% if ai_enabled %}<label class="ai-consent"><input type="checkbox" name="consent_ai" value="yes" required><span>I agree to send my question and selected cards to OpenAI to create this reading. The app owner’s OpenAI account may be charged for API use; the API key stays private on the server.</span></label>
+      {% if ai_enabled %}<label class="ai-consent"><input type="checkbox" name="consent_ai" value="yes" required><span>I agree to send my question and selected cards to the AI provider to create this reading. The app owner’s AI account may be charged for API use; the API key stays private on the server.</span></label>
       {% else %}<div class="alert info-note">AI is not connected yet. Add <code>OPENAI_API_KEY</code> to your local <code>.env</code> for AI-guided card readings. You can still draw cards and see their master meanings.</div>{% endif %}
       <button class="btn tarot-submit" type="submit"><span class="submit-label">Draw my cards</span><span aria-hidden="true">→</span></button>
       <div class="shuffle-stage" aria-hidden="true"><span class="shuffle-card">✦</span><span class="shuffle-card">✦</span><span class="shuffle-card">✦</span></div>

@@ -10,3 +10,6 @@ static/tarot_cards/*.webp
 .env.*-backup
 sampel-chat/
 colab/sample_chat_messages.csv
+
+.vercel
+.env*
