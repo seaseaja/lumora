@@ -5,10 +5,6 @@ __pycache__/
 .env.*
 !.env.example
 colab/
-static/tarot_cards/*.png
-static/tarot_cards/*.jpg
-static/tarot_cards/*.jpeg
-static/tarot_cards/*.webp
 .vscode/
 sampel-chat/
 *.zip
