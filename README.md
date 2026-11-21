@@ -100,4 +100,5 @@ Variabel rahasia dimasukkan melalui halaman Environment penyedia hosting, bukan 
 - Checkout hanya simulasi lokal: tidak memproses pembayaran sungguhan.
 - Chat WhatsApp mentah hanya diproses selama request; database menyimpan statistik dan laporan, bukan percakapan mentah.
 - Pembacaan Matrix dan Zodiac/Shio adalah hiburan/refleksi.
+- Shio memakai tanggal Imlek 1900–2050 dari `lunar_new_year.py`. Tabel `imlek_dates` di database diutamakan; tahun yang belum ada di database otomatis memakai tabel ini, jadi database lama (1990–2030) tidak perlu di-seed ulang.
 - Jangan commit `.env`, connection string Neon, atau password.

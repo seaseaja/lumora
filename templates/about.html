@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}About Lumora · Lumora{% endblock %}
+{% block content %}
+<div class="about-page">
+  <p class="eyebrow">ABOUT LUMORA</p>
+  <h1>A little clarity, your way.</h1>
+  <p class="muted about-lead">Lumora is a reflection tool. It brings chat analysis, tarot, the Destiny Matrix, and Zodiac &amp; Shio together in one place so you can look at your relationships and choices from a few different angles.</p>
+
+  <h2 class="about-heading">What you can do</h2>
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6"><article class="card about-card h-100"><h3>Chat Analysis</h3><p class="muted mb-0">Upload a WhatsApp export to see a closeness score from 0 to 100, how it changes month by month, and communication patterns based on Gottman's research. The analysis follows fixed rules and keyword lists. It is not a trained AI model, and every report explains how its score was calculated.</p></article></div>
+    <div class="col-12 col-md-6"><article class="card about-card h-100"><h3>Tarot</h3><p class="muted mb-0">Ask a question, draw cards, and read an interpretation. With your consent, AI can suggest a spread, write the reading, and answer follow-up questions. Without AI, readings use the card meanings in Lumora's own card data.</p></article></div>
+    <div class="col-12 col-md-6"><article class="card about-card h-100"><h3>Destiny Matrix</h3><p class="muted mb-0">Calculate your matrix from your birth date and explore what each position describes.</p></article></div>
+    <div class="col-12 col-md-6"><article class="card about-card h-100"><h3>Zodiac &amp; Shio</h3><p class="muted mb-0">See your Western sign, your Chinese zodiac animal and element, and your Kua number with its favourable directions. Lumora uses the Lunar New Year date, not 1 January, to work out your Shio.</p></article></div>
+  </div>
+
+  <h2 class="about-heading">Your privacy</h2>
+  <div class="card about-card mb-4">
+    <ul class="about-list mb-0">
+      <li>Chat messages are only read while your upload is being processed. Lumora saves the numbers and aliases from the analysis, not the messages themselves.</li>
+      <li>Tarot questions and card names are only sent to the AI provider if you tick the consent box, and the provider is asked not to store them.</li>
+      <li>Your readings stay in your history so you can open them again, and only you can see them.</li>
+    </ul>
+  </div>
+
+  <h2 class="about-heading">A gentle note</h2>
+  <div class="card about-card mb-0">
+    <p class="muted mb-0">Lumora's readings are for reflection and fun. They are not predictions, and they are not professional advice on psychology, health, money, or law. A closeness score or a tarot card can't tell you everything about a person or a relationship. If something important is on your mind, talk to someone you trust or to a qualified professional.</p>
+  </div>
+</div>
+{% endblock %}

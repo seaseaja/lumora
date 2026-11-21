@@ -1,10 +1,10 @@
 import os
-from datetime import date
 
 from dotenv import load_dotenv
 from sqlmodel import Session, select
 
 from database import create_db_and_tables, engine
+from lunar_new_year import IMLEK_DATES
 from models import (Arcana, ChatKeyword, ImlekDate, Service, ShioAnimal, TarotCard,
                     User, ZodiacSign)
 from patterns import DEFAULT_KEYWORDS, PREVIOUS_DEFAULTS
@@ -124,20 +124,7 @@ SHIOS = [
     (10, "Dog", "Loyal, honest"), (11, "Pig", "Generous, sociable"),
 ]
 
-# Tanggal Imlek 1990-2030 (sudah dicek ulang dengan library kalender lunar).
-IMLEK = {
-    1990: "1990-01-27", 1991: "1991-02-15", 1992: "1992-02-04", 1993: "1993-01-23",
-    1994: "1994-02-10", 1995: "1995-01-31", 1996: "1996-02-19", 1997: "1997-02-07",
-    1998: "1998-01-28", 1999: "1999-02-16", 2000: "2000-02-05", 2001: "2001-01-24",
-    2002: "2002-02-12", 2003: "2003-02-01", 2004: "2004-01-22", 2005: "2005-02-09",
-    2006: "2006-01-29", 2007: "2007-02-18", 2008: "2008-02-07", 2009: "2009-01-26",
-    2010: "2010-02-14", 2011: "2011-02-03", 2012: "2012-01-23", 2013: "2013-02-10",
-    2014: "2014-01-31", 2015: "2015-02-19", 2016: "2016-02-08", 2017: "2017-01-28",
-    2018: "2018-02-16", 2019: "2019-02-05", 2020: "2020-01-25", 2021: "2021-02-12",
-    2022: "2022-02-01", 2023: "2023-01-22", 2024: "2024-02-10", 2025: "2025-01-29",
-    2026: "2026-02-17", 2027: "2027-02-06", 2028: "2028-01-26", 2029: "2029-02-13",
-    2030: "2030-02-03",
-}
+# Tanggal Imlek 1900-2050 ada di lunar_new_year.py supaya app dan seed memakai tabel yang sama.
 
 # ---------------------------------------------------------------- kamus chat
 # Kamus pola komunikasi (Gottman) ada di patterns.py supaya app dan seed memakai daftar yang sama.
@@ -176,9 +163,9 @@ def main():
             if not s.exec(select(ShioAnimal).where(ShioAnimal.cycle_index == idx)).first():
                 s.add(ShioAnimal(cycle_index=idx, name=name, traits=tr))
 
-        for year, d in IMLEK.items():
+        for year, d in IMLEK_DATES.items():
             if not s.get(ImlekDate, year):
-                s.add(ImlekDate(year=year, new_year_date=date.fromisoformat(d)))
+                s.add(ImlekDate(year=year, new_year_date=d))
 
         for cat, kws, src, w in KEYWORDS:
             row = s.exec(select(ChatKeyword).where(ChatKeyword.category == cat)).first()

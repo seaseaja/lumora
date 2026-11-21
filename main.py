@@ -25,6 +25,7 @@ from closeness import closeness_by_month, compute_closeness
 from database import create_db_and_tables, get_session
 from models import ChatKeyword
 from patterns import build_dictionary, count_patterns
+from lunar_new_year import lunar_new_year
 from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ImlekDate, MatrixReading, Order, Payment,
                     Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, UserAvatar, ZodiacReading,
                     ZodiacSign, utcnow)
@@ -72,6 +73,7 @@ def on_startup():
 def render(request: Request, name: str, status_code: int = 200, **ctx):
     ctx["csrf"] = csrf_token(request)
     ctx.setdefault("user", None)
+    ctx.setdefault("now_year", date.today().year)
     return templates.TemplateResponse(request, name, ctx, status_code=status_code)
 
 
@@ -303,6 +305,11 @@ def avatar_image(user_id: int, user=Depends(require_user), session: Session = De
 @app.get("/dashboard")
 def dashboard(request: Request, user=Depends(require_user)):
     return render(request, "dashboard.html", user=user)
+
+
+@app.get("/about")
+def about_page(request: Request, user=Depends(require_user)):
+    return render(request, "about.html", user=user)
 
 
 # ---------- tarot reading ----------
@@ -862,6 +869,12 @@ def make_zodiac_result(born: date, sign: ZodiacSign, shio: ShioAnimal, shio_year
     }
 
 
+def imlek_date_for(session: Session, year: int):
+    """Lunar New Year date for a Gregorian year: database row first, built-in table as fallback."""
+    row = session.get(ImlekDate, year)
+    return row.new_year_date if row else lunar_new_year(year)
+
+
 def arcana_number(value: int) -> int:
     while value > 22:
         value = sum(int(digit) for digit in str(value))
@@ -1022,10 +1035,10 @@ def zodiac_calculate(request: Request, birth_date: str = Form(""), kua_formula: 
                  if s.start_month <= s.end_month), None)
     if not sign:
         sign = next((s for s in signs if s.start_month > s.end_month and ((born.month, born.day) >= (s.start_month, s.start_day) or (born.month, born.day) <= (s.end_month, s.end_day))), None)
-    year_mark = session.get(ImlekDate, born.year)
-    if not year_mark or born.year - 1 not in [r.year for r in session.exec(select(ImlekDate)).all()]:
+    new_year = imlek_date_for(session, born.year)
+    if not new_year:
         return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Lunar calendar data is unavailable for this birth year.", kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
-    shio_year = born.year if born >= year_mark.new_year_date else born.year - 1
+    shio_year = born.year if born >= new_year else born.year - 1
     shio = session.exec(select(ShioAnimal).where(ShioAnimal.cycle_index == ((shio_year - 2020) % 12))).first()
     if not sign or not shio:
         return render(request, "zodiac.html", status_code=400, user=user, result=None, error="Zodiac or Chinese Zodiac data is unavailable.", kua_formula=kua_formula, page_lang="en", birth_date=birth_date)
@@ -1640,9 +1653,9 @@ def report_detail(request: Request,reading_id:int,user=Depends(require_user),ses
         if saved_zodiac:
             sign = session.get(ZodiacSign, saved_zodiac.zodiac_id)
             shio = session.get(ShioAnimal, saved_zodiac.shio_id)
-            year_mark = session.get(ImlekDate, saved_zodiac.birth_date.year)
-            if sign and shio and year_mark:
-                shio_year = saved_zodiac.birth_date.year if saved_zodiac.birth_date >= year_mark.new_year_date else saved_zodiac.birth_date.year - 1
+            new_year = imlek_date_for(session, saved_zodiac.birth_date.year)
+            if sign and shio and new_year:
+                shio_year = saved_zodiac.birth_date.year if saved_zodiac.birth_date >= new_year else saved_zodiac.birth_date.year - 1
                 try:
                     kua_formula = json.loads(reading.result_json or "{}").get("kua_formula", "both")
                 except (TypeError, json.JSONDecodeError):
