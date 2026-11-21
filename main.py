@@ -21,6 +21,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 
+from closeness import closeness_by_month, compute_closeness
 from database import create_db_and_tables, get_session
 from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ImlekDate, MatrixReading, Order, Payment,
                     Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, UserAvatar, ZodiacReading,
@@ -1445,6 +1446,8 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
          "conversation_openers": openers[person]}
         for person, stat in zip(people, stats)
     ]
+    chart_data["closeness"] = compute_closeness(relevant, people)
+    chart_data["closeness"]["monthly"] = closeness_by_month(relevant, people)
     chart_data["narrative_status"] = "opted_out" if ai_enabled else "not_available"
     if ai_enabled and consent_ai == "yes":
         try:
@@ -1464,7 +1467,8 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
     session.flush()
     chat = ChatSession(reading_id=reading.id, consent_given=True, total_messages=len(relevant),
                        first_message_at=first_chat_at, last_message_at=last_chat_at, status="done",
-                       my_alias=my_alias, other_alias=other_alias)
+                       my_alias=my_alias, other_alias=other_alias,
+                       interest_trend=chart_data["closeness"]["monthly"]["trend"])
     session.add(chat)
     session.flush()
     for index, row in enumerate(stats):
