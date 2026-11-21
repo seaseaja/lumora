@@ -1283,6 +1283,92 @@ def build_chat_narrative(messages, people, aliases, chart_data):
     return allowed
 
 
+# ---------- Closeness level (rule-based, no trained model) ----------
+# Whole-word patterns so "sadar" or "tolol" do not match short terms by accident.
+WARM_PATTERN = re.compile(
+    r"\b(?:makasih|terima kasih|thanks|thank you|thx|sayang|kangen|rindu|miss you|love you|"
+    r"hati-hati|hati hati|semangat|peluk|hug|bangga|proud|seneng|senang|happy|"
+    r"w+k+w+[wk]*|(?:ha){2,}h?|(?:he){2,}h?)\b|❤|♥|🥰|😘|🤗|😍|💕|💖",
+    re.I,
+)
+CLOSENESS_LEVELS = (  # (minimum score, label, description)
+    (75, "Very close", "Frequent, balanced, and quick back-and-forth with regular warm wording."),
+    (55, "Close", "Regular contact where both people take part and reply fairly quickly."),
+    (35, "Casual", "Contact happens, but less often or with one person carrying more of it."),
+    (0, "Distant", "Occasional or one-sided contact with slow replies."),
+)
+
+
+def _scale(value: float, low: float, high: float) -> float:
+    """Map value linearly onto 0..1 between low and high (clamped)."""
+    if high == low:
+        return 0.0
+    return max(0.0, min(1.0, (value - low) / (high - low)))
+
+
+def compute_closeness(relevant, people, openers, quick_replies):
+    """Combine communication signals into a 0-100 closeness score.
+
+    Each component is scored 0..1, multiplied by its weight, and summed.
+    Thresholds are heuristics chosen for this project, not values learned from data.
+    """
+    first_day = relevant[0][0].date()
+    last_day = relevant[-1][0].date()
+    span_days = (last_day - first_day).days + 1
+    active_days = len({timestamp.date() for timestamp, _, _ in relevant})
+    per_active_day = len(relevant) / max(active_days, 1)
+
+    sender_counts = Counter(sender for _, sender, _ in relevant)
+    smaller_share = min(sender_counts[person] for person in people) / max(len(relevant), 1)
+
+    replies = [quick_replies[person] for person in people if quick_replies[person] is not None]
+    median_reply = sum(replies) / len(replies) if replies else None
+
+    total_openers = sum(openers[person] for person in people)
+    opener_share = (min(openers[person] for person in people) / total_openers) if total_openers else 0.5
+
+    text_messages = [body for _, _, body in relevant
+                     if not re.search(r"omitted|tidak disertakan|was deleted|telah dihapus", body, re.I)]
+    warm_rate = sum(1 for body in text_messages if WARM_PATTERN.search(body)) / max(len(text_messages), 1)
+
+    if median_reply is None:
+        reply_detail = "Not enough replies"
+    elif median_reply >= 60:
+        reply_detail = f"Typical reply in {median_reply / 60:.0f} min"
+    else:
+        reply_detail = f"Typical reply in {median_reply:.0f} sec"
+
+    components = [
+        {"key": "frequency", "label": "Chat frequency", "weight": 25,
+         "value": _scale(per_active_day, 5, 60),
+         "detail": f"{per_active_day:.0f} messages per active day"},
+        {"key": "consistency", "label": "Consistency", "weight": 15,
+         "value": _scale(active_days / span_days, 0.05, 0.7),
+         "detail": f"Talked on {active_days} of {span_days} days"},
+        {"key": "balance", "label": "Message balance", "weight": 20,
+         "value": _scale(smaller_share, 0.15, 0.45),
+         "detail": f"Quieter person sent {smaller_share * 100:.0f}% of messages"},
+        # 2 minutes or faster scores full marks; 3 hours or slower scores zero.
+        {"key": "reply", "label": "Reply speed", "weight": 20,
+         "value": 0.0 if median_reply is None else 1 - _scale(median_reply, 120, 3 * 60 * 60),
+         "detail": reply_detail},
+        {"key": "initiative", "label": "Who starts chats", "weight": 10,
+         "value": _scale(opener_share, 0.1, 0.4),
+         "detail": f"Less frequent starter opened {opener_share * 100:.0f}% of conversations"},
+        {"key": "warmth", "label": "Warm wording", "weight": 10,
+         "value": _scale(warm_rate, 0.02, 0.15),
+         "detail": f"{warm_rate * 100:.0f}% of text messages"},
+    ]
+    score = round(sum(item["value"] * item["weight"] for item in components))
+    for item in components:
+        item["points"] = round(item["value"] * item["weight"], 1)
+        item["value"] = round(item["value"], 3)
+    _, label, description = next(level for level in CLOSENESS_LEVELS if score >= level[0])
+    return {"score": score, "level": label, "description": description,
+            "levels": [{"min": level[0], "label": level[1]} for level in CLOSENESS_LEVELS],
+            "components": components}
+
+
 def parse_wa_export(raw: str):
     lines = raw.splitlines()
     # WhatsApp exports use the phone's locale. Infer that locale from
@@ -1445,6 +1531,7 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
          "conversation_openers": openers[person]}
         for person, stat in zip(people, stats)
     ]
+    chart_data["closeness"] = compute_closeness(relevant, people, openers, quick_replies)
     chart_data["narrative_status"] = "opted_out" if ai_enabled else "not_available"
     if ai_enabled and consent_ai == "yes":
         try:
