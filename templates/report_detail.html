@@ -54,6 +54,21 @@
   <p class="muted small">These are descriptive patterns, not a measure of anyone's feelings or intent.</p>
 </section>
 
+{% if chat_chart.closeness %}{% set cl = chat_chart.closeness %}
+<section class="card chat-visual-card chat-closeness-card">
+  <div class="chat-visual-heading"><div><p class="eyebrow">CLOSENESS LEVEL</p><h2>{{ cl.level }}</h2></div><span>{{ cl.score }} / 100</span></div>
+  <p class="chat-overview-summary">{{ cl.description }}</p>
+  <div class="chat-closeness-scale" role="img" aria-label="Closeness score {{ cl.score }} out of 100, level {{ cl.level }}">
+    <div class="chat-bar-track"><span style="width:{{ cl.score }}%"></span></div>
+    <div class="chat-closeness-steps">{% for level in cl.levels|reverse %}<small class="{{ 'is-active' if level.label == cl.level }}">{{ level.label }} <b>{{ level.min }}+</b></small>{% endfor %}</div>
+  </div>
+  <div class="chat-closeness-parts">{% for part in cl.components %}
+    <div><p><span>{{ part.label }}</span><b>{{ part.points|round(1) }} / {{ part.weight }}</b></p><div class="chat-bar-track"><span style="width:{{ part.value * 100 }}%"></span></div><small>{{ part.detail }}</small></div>
+  {% endfor %}</div>
+  <p class="muted small">Rule-based score from message counts, timing, and keywords. It describes how this chat is used, not how two people feel about each other.</p>
+</section>
+{% endif %}
+
 <section class="chat-kpi-grid">
   <article><span>Conversation span</span><b>{{ chat.first_message_at.strftime('%d %b %Y') }} – {{ chat.last_message_at.strftime('%d %b %Y') }}</b><small>{{ chat_chart.duration_days|default('—') }} days covered</small></article>
   <article><span>Conversation sessions</span><b>{{ chat_chart.session_count|default('—') }}</b><small>New session after a 6-hour gap</small></article>
