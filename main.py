@@ -23,6 +23,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from closeness import closeness_by_month, compute_closeness
 from database import create_db_and_tables, get_session
+from models import ChatKeyword
+from patterns import build_dictionary, count_patterns
 from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ImlekDate, MatrixReading, Order, Payment,
                     Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, UserAvatar, ZodiacReading,
                     ZodiacSign, utcnow)
@@ -1448,6 +1450,12 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
     ]
     chart_data["closeness"] = compute_closeness(relevant, people)
     chart_data["closeness"]["monthly"] = closeness_by_month(relevant, people)
+    keyword_rows = session.exec(select(ChatKeyword.category, ChatKeyword.keywords)
+                                .where(ChatKeyword.is_active == True)).all()  # noqa: E712
+    patterns = count_patterns(relevant, people, build_dictionary(keyword_rows))
+    for row in patterns:
+        row["person"] = alias_for[row["person"]]  # store the alias, never the sender's real name
+    chart_data["patterns"] = patterns
     chart_data["narrative_status"] = "opted_out" if ai_enabled else "not_available"
     if ai_enabled and consent_ai == "yes":
         try:
@@ -1473,6 +1481,10 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
     session.flush()
     for index, row in enumerate(stats):
         session.add(ChatPersonStat(chat_session_id=chat.id, person="me" if index == 0 else "other", **row))
+    for index, row in enumerate(patterns):
+        for category in row["categories"]:
+            session.add(ChatIndicatorScore(chat_session_id=chat.id, person="me" if index == 0 else "other",
+                                           category=category["key"], hit_count=category["count"]))
     session.commit()
     audit(session, "chat_analyzed", detail=f"reading_id={reading.id}; messages={len(relevant)}", user_id=user.id, request=request)
     raw = ""
