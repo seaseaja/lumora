@@ -1,58 +1,66 @@
-# Panduan pelabelan level kedekatan
+# Panduan Label Kedekatan Chat
 
-Panduan ini dipakai semua anggota saat mengisi `colab/closeness_labels.csv`, supaya label kita bisa dibandingkan dengan skor Lumora. Kalau tiap orang punya patokan sendiri soal "dekat", angka akurasinya tidak berarti apa-apa.
+Panduan ini dipakai untuk melabeli `colab/closeness_labels.csv` secara manual.
+Labelnya membandingkan penilaian manusia dengan skor app. Karena itu, nilailah
+dari **kesan kamu sendiri sebagai pembaca**. Jangan menebak cara kerja app.
 
-## Sebelum mulai
+## Aturan main
 
-- **Izin dulu.** Pakai chat yang orang di dalamnya sudah setuju dianalisis. Export tanpa media (*Export chat → Without media*).
-- **Labeli sebelum lihat skor app.** Jangan upload chat ke Lumora atau menjalankan script sebelum labelmu selesai. Kalau sudah lihat skornya, label kita ikut terpengaruh.
-- **Jangan diskusi label dengan anggota lain sebelum semua selesai.** Kesepakatan antar penilai juga diukur; kalau sudah berunding, angkanya jadi palsu.
-- **Nilai cara mereka berkomunikasi di chat ini saja**, bukan apa yang kamu tahu soal hubungan mereka di luar chat.
-- Baca sekilas **minimal 3 bagian**: awal, tengah, dan bulan-bulan terakhir chat.
+1. **Labeli dulu, baru lihat skor app.** Jangan buka hasil app, `closeness.py`,
+   atau `closeness_validation_results.csv` sebelum semua anggota selesai.
+2. **Jangan diskusi label** dengan anggota lain sampai semua selesai. Kalau ragu,
+   putuskan sendiri dan tulis alasannya di catatan pribadi.
+3. **Satu baris = satu chat + satu penilai.** Isi `rater` dengan inisialmu dan
+   `label` dengan salah satu dari: `Distant`, `Casual`, `Close`, `Very close`.
+   Tulis persis seperti itu (angka `1`–`4` juga diterima).
+4. **Baca hanya chat yang boleh kamu baca.** Kalau salah satu pihak di chat
+   keberatan, lewati chat itu dan kosongkan labelnya.
+5. Usahakan **minimal 2 penilai per chat**. Simpan sebagai **CSV (UTF-8)**.
+   Jangan ubah kolom `file`.
 
-## Empat level
+## Cara menilai
 
-| Label | Ciri yang terlihat di chat |
-|---|---|
-| **Distant** | Jarang chat (sesekali dalam sebulan). Sering cuma satu orang yang ngechat. Balasan lama (berjam-jam/berhari-hari). Isinya urusan seperlunya: tanya tugas, info, janjian sekali. |
-| **Casual** | Chat beberapa kali seminggu. Dua-duanya ikut, tapi satu orang jelas lebih aktif. Balasan tidak selalu cepat. Obrolan santai ada, tapi jarang panjang atau personal. |
-| **Close** | Chat hampir tiap hari atau rutin. Dua-duanya sama-sama mulai obrolan. Balasan biasanya cepat. Ada candaan, cerita pribadi, saling dukung. |
-| **Very close** | Chat tiap hari dan panjang. Sangat seimbang. Balasan cepat. Sering ada ungkapan sayang/kangen/terima kasih, cerita hal pribadi, dan saling cek kabar tanpa alasan khusus. |
+Baca chatnya cukup lama supaya dapat gambaran utuh: awal, tengah, dan bagian
+terakhir. Tanyakan ke diri sendiri: *"Kalau dilihat dari chat ini saja, seberapa
+dekat dua orang ini?"*
 
-Kalau ragu di antara dua level, pilih yang **lebih rendah**, lalu tulis alasannya di kolom catatan (lihat di bawah).
+Nilai **hubungannya, bukan banyaknya pesan.** Chat yang panjang tapi isinya
+urusan kerja tetap bisa `Distant`. Chat yang pendek tapi hangat dan personal
+bisa `Close`.
 
-## Yang bukan ukuran kedekatan di sini
+Hal yang bisa jadi pertimbangan:
 
-- **Status hubungan.** Pacar bisa saja jarang chat; teman bisa chat tiap hari. Nilai chat-nya.
-- **Pertengkaran.** Orang yang dekat juga bisa bertengkar. Konflik dibahas terpisah di bagian *Communication patterns*.
-- **Jumlah stiker/foto.** Media tidak ikut dihitung app.
+- **Isi obrolan:** cuma urusan/logistik, atau ada cerita pribadi, curhat, dan
+  candaan internal?
+- **Nada:** formal dan sopan berjarak, santai, atau sangat akrab (panggilan
+  sayang, ejekan akrab, bahasa "kita banget")?
+- **Inisiatif:** dua-duanya sama-sama memulai obrolan, atau hanya satu pihak?
+- **Saling peduli:** menanyakan kabar, memberi dukungan, ingat detail hidup
+  pihak lain?
+- **Keterbukaan:** berani membahas masalah, perasaan, atau hal yang sensitif?
 
-## Cara mengisi CSV
+## Definisi level
 
-Satu baris per chat per penilai. Kolom `file` harus sama persis dengan nama file chat.
+| Label | Gambaran singkat | Ciri yang biasa terlihat |
+|---|---|---|
+| **Distant** | Kenal, tapi berjarak. | Obrolan seperlunya: tugas, kerja, transaksi, info. Nada formal atau datar. Jarang ada basa-basi pribadi. Sering ada jeda panjang tanpa obrolan. |
+| **Casual** | Akrab secara santai, belum personal. | Nada santai, ada candaan ringan, sesekali ngobrol di luar urusan. Topik masih di permukaan (rencana, info, meme). Jarang curhat. |
+| **Close** | Teman dekat. | Sering cerita soal kehidupan masing-masing, saling tanya kabar, ada candaan internal. Ada curhat atau dukungan emosional dan terasa nyaman. Dua arah. |
+| **Very close** | Sangat dekat (sahabat, pasangan, keluarga dekat). | Sangat terbuka, termasuk soal hal sensitif. Kontak hampir rutin, gaya bahasa khas berdua, saling mengandalkan. Terasa jelas ada ikatan kuat dari dua pihak. |
 
-```csv
-file,rater,label
-WhatsApp Chat - sampel1.txt,GW,Close
-WhatsApp Chat - sampel1.txt,SE,Very close
-WhatsApp Chat - sampel2.zip,GW,Distant
-```
+## Kalau ragu antara dua level
 
-- `rater`: inisialmu (jangan nama lengkap).
-- `label`: `Distant`, `Casual`, `Close`, `Very close`. Boleh juga `1`–`4` atau `jauh` / `biasa` / `dekat` / `sangat dekat`.
-- Mau mencatat alasan? Tambahkan kolom `catatan` di paling kanan; script mengabaikannya.
+- Pilih level yang paling cocok untuk **sebagian besar** isi chat, bukan satu
+  momen saja.
+- Kalau masih seimbang, pilih yang **lebih rendah**. Kedekatan yang kuat
+  biasanya terlihat jelas.
+- Jangan menilai dari siapa orangnya (misalnya "dia kan teman lama"). Nilai
+  hanya dari chat yang kamu baca.
+- Kalau chat terlalu sedikit atau tidak bisa dinilai, kosongkan labelnya.
 
-## Berapa banyak?
+## Privasi
 
-- **Minimal 20 chat**, idealnya 30 atau lebih, dan sebisa mungkin tersebar di keempat level. Kalau semua sampel chat sahabat dekat, akurasi "Distant" tidak bisa diukur.
-- **Minimal 2 penilai per chat**, supaya tingkat kesepakatan antar penilai bisa dihitung. Kalau sesama manusia saja sering beda pendapat, wajar kalau app juga tidak sempurna.
-
-## Setelah semua selesai
-
-```powershell
-venv\Scripts\python colab\validate_closeness.py
-```
-
-Hasil yang perlu dicatat di laporan: *exact level match*, *within one level*, *Spearman*, *raters fully agree*, dan confusion matrix. Kalau script bilang skor app cenderung terlalu tinggi atau terlalu rendah, batas level di `closeness.py` (`CLOSENESS_LEVELS`) bisa disesuaikan, lalu jalankan `python -m unittest discover tests` untuk memastikan tidak ada yang rusak.
-
-File CSV label dan hasilnya tidak masuk Git, karena nama file chat bisa berisi nama orang.
+- Jangan menyalin, mengutip, atau screenshot isi chat ke mana pun, termasuk
+  grup tugas.
+- `sampel-chat/`, `closeness_labels.csv`, dan file hasil sudah masuk
+  `.gitignore`. Jangan di-commit dan jangan diunggah.
