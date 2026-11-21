@@ -65,6 +65,20 @@
   <div class="chat-closeness-parts">{% for part in cl.components %}
     <div><p><span>{{ part.label }}</span><b>{{ part.points|round(1) }} / {{ part.weight }}</b></p><div class="chat-bar-track"><span style="width:{{ part.value * 100 }}%"></span></div><small>{{ part.detail }}</small></div>
   {% endfor %}</div>
+  {% if cl.monthly and cl.monthly.months|length > 1 %}{% set mo = cl.monthly %}
+  <div class="chat-closeness-monthly">
+    <h3>Closeness by month</h3>
+    <p class="chat-overview-summary">{% if mo.trend == 'rising' %}Getting closer: recent months score {{ mo.change }} points higher than the earliest months.{% elif mo.trend == 'falling' %}Drifting apart: recent months score {{ -mo.change }} points lower than the earliest months.{% elif mo.trend == 'steady' %}Steady: recent months score within {{ mo.change|abs }} points of the earliest months.{% else %}Not enough months with {{ mo.min_messages }}+ messages from both people to show a direction.{% endif %}</p>
+    <div class="chat-closeness-months" role="list">{% for m in mo.months %}
+      <div role="listitem" class="{{ 'is-empty' if m.score is none }}" title="{{ m.label }}: {% if m.score is none %}{{ m.messages }} messages, too few to score{% else %}{{ m.score }}/100, {{ m.level }}{% endif %}">
+        <b>{{ m.score if m.score is not none else '–' }}</b>
+        <div class="chat-closeness-month-bar"><span style="height:{{ m.score if m.score is not none else 0 }}%"></span></div>
+        <small>{{ m.label }}</small>
+      </div>
+    {% endfor %}</div>
+    <small class="chat-insight-hint">Each month is scored on its own messages. Months with fewer than {{ mo.min_messages }} messages are shown as “–”.</small>
+  </div>
+  {% endif %}
   <p class="muted small">Rule-based score from message counts, timing, and keywords. It describes how this chat is used, not how two people feel about each other.</p>
 </section>
 {% endif %}
