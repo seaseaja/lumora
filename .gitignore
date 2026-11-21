@@ -9,3 +9,5 @@ colab/sample_chat_messages.csv
 
 .vercel
 .env*
+colab/closeness_labels.csv
+colab/closeness_validation_results.csv
