@@ -1214,6 +1214,32 @@ def detect_topic_counts(messages):
     return [{"name": topic, "count": count} for topic, count in counts.most_common()]
 
 
+def narrative_scores(chart_data):
+    """Compact closeness and pattern results for the AI prompt (aliases and counts only, no message text)."""
+    context = {}
+    closeness = chart_data.get("closeness")
+    if closeness:
+        monthly = closeness.get("monthly") or {}
+        context["rule_based_closeness"] = {
+            "score_out_of_100": closeness["score"], "level": closeness["level"],
+            "components": [{"part": part["label"], "points": part["points"], "max": part["weight"],
+                            "measured": part["detail"]} for part in closeness["components"]],
+            "monthly_trend": monthly.get("trend"),
+            "monthly_scores": [{"month": month["month"], "score": month["score"]}
+                               for month in monthly.get("months", []) if month["score"] is not None],
+        }
+    patterns = chart_data.get("patterns")
+    if patterns:
+        context["keyword_communication_patterns"] = [
+            {"person": row["person"], "text_messages": row["text_messages"],
+             "positive_to_negative_ratio": row["ratio"],
+             "categories": [{"pattern": c["label"], "messages": c["count"], "per_100": c["per_100"],
+                             "worth_noticing": c["notice"]} for c in row["categories"]]}
+            for row in patterns
+        ]
+    return context
+
+
 def build_chat_narrative(messages, people, aliases, chart_data):
     by_month = defaultdict(list)
     for message in messages:
@@ -1246,6 +1272,7 @@ def build_chat_narrative(messages, people, aliases, chart_data):
         "communication_metrics": chart_data.get("communication_metrics", []),
         "monthly_counts": chart_data["monthly_activity"],
         "full_export_keyword_topic_signals": chart_data["topics"],
+        **narrative_scores(chart_data),
         "sampling_note": "Message excerpts are a small sample; all numeric totals and keyword-topic counts describe the full parsed export.",
         "selected_message_excerpts": excerpts,
     }, ensure_ascii=False)
@@ -1259,7 +1286,11 @@ def build_chat_narrative(messages, people, aliases, chart_data):
         "Write in English. Do not quote or reproduce private messages, reveal names beyond the supplied aliases, "
         "infer hidden feelings, diagnose anyone, or present second-hand claims as facts. Distinguish direct patterns "
         "from uncertainty. Clearly treat excerpts as a sample and keyword topic counts as estimates, not full semantic classification. "
-        "Base observations only on supplied counts and excerpts; do not invent context."
+        "Base observations only on supplied counts and excerpts; do not invent context. "
+        "The report already shows rule_based_closeness and keyword_communication_patterns next to your text. "
+        "Stay consistent with them: do not state a different closeness level, and when you mention them, "
+        "say they come from rule-based counts. Mention a communication pattern only if it is marked worth_noticing, "
+        "describe it as a pattern in the wording rather than a trait of the person, and never call anyone a red flag."
     )
     raw = call_openai(instructions, prompt, 2400).strip()
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I)
