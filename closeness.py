@@ -22,10 +22,12 @@ WARM_PATTERN = re.compile(
     r"w+k+w+[wk]*|(?:ha){2,}h?|(?:he){2,}h?)\b|❤|♥|🥰|😘|🤗|😍|💕|💖",
     re.I,
 )
+# Level boundaries calibrated on 20 labelled sample chats (leave-one-out validation);
+# see docs/bab-metode.md 3.7. The first version used 35 / 55 / 75.
 CLOSENESS_LEVELS = (  # (minimum score, label, description), highest first
-    (75, "Very close", "Frequent, balanced, and quick back-and-forth with regular warm wording."),
-    (55, "Close", "Regular contact where both people take part and reply fairly quickly."),
-    (35, "Casual", "Contact happens, but less often or with one person carrying more of it."),
+    (92, "Very close", "Frequent, balanced, and quick back-and-forth with regular warm wording."),
+    (66, "Close", "Regular contact where both people take part and reply fairly quickly."),
+    (38, "Casual", "Contact happens, but less often or with one person carrying more of it."),
     (0, "Distant", "Occasional or one-sided contact with slow replies."),
 )
 LEVEL_NAMES = [level[1] for level in reversed(CLOSENESS_LEVELS)]  # Distant .. Very close

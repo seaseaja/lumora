@@ -1,6 +1,6 @@
 # BAB III — METODE PENELITIAN
 
-> **Draft.** Bagian bertanda **[ISI]** diisi setelah pelabelan dan validasi selesai. Semua angka parameter di bab ini diambil dari kode sumber (`closeness.py`, `patterns.py`, `main.py`). Jika parameter di kode diubah, angka di bab ini harus diperbarui juga.
+> **Draft.** Hasil validasi (subbab 3.7.4) berasal dari satu penilai dan perlu diperbarui jika anggota lain ikut melabeli. Semua angka parameter di bab ini diambil dari kode sumber (`closeness.py`, `patterns.py`, `main.py`). Jika parameter di kode diubah, angka di bab ini harus diperbarui juga.
 
 ## 3.1 Gambaran Umum Sistem
 
@@ -80,10 +80,12 @@ Catatan definisi:
 
 | Skor | Kategori |
 |---|---|
-| 0–34 | Distant |
-| 35–54 | Casual |
-| 55–74 | Close |
-| 75–100 | Very close |
+| 0–37 | Distant |
+| 38–65 | Casual |
+| 66–91 | Close |
+| 92–100 | Very close |
+
+Batas di atas adalah hasil kalibrasi (subbab 3.7.3). Versi awal memakai batas 35, 55, dan 75.
 
 ### 3.4.4 Tren bulanan
 
@@ -177,19 +179,39 @@ Kesepakatan antar penilai menjadi acuan batas atas yang realistis: jika sesama m
 
 Jika matriks kebingungan menunjukkan aplikasi konsisten menilai lebih tinggi (atau lebih rendah) daripada manusia, batas kategori (subbab 3.4.3) disesuaikan. Karena jumlah sampel kecil (20 percakapan), kalibrasi dibatasi pada batas kategori. Bobot komponen tidak diubah, untuk mengurangi risiko *overfitting*. Hasil sebelum dan sesudah kalibrasi dilaporkan.
 
+Batas baru dipilih dengan pencarian menyeluruh atas semua kombinasi bilangan bulat $a < b < c$. Kriterianya berurutan: jumlah kecocokan persis terbanyak, lalu total selisih level terkecil, lalu batas yang paling dekat dengan versi awal. Karena data hanya 20 percakapan, akurasi batas baru diperkirakan dengan **validasi silang *leave-one-out***: batas dicari dari 19 percakapan lalu diuji pada 1 percakapan sisanya, diulang 20 kali. Dengan cara ini, akurasinya tidak diukur pada data yang sama dengan data yang dipakai untuk memilih batas.
+
 ### 3.7.4 Hasil
 
-**[ISI setelah validasi]**
+Pelabelan dilakukan oleh **satu penilai** terhadap **20 percakapan** (Very close: 1, Close: 8, Casual: 8, Distant: 3). Karena baru ada satu penilai, kesepakatan antar penilai belum dapat dihitung.
 
-| Metrik | Nilai |
-|---|---|
-| Jumlah percakapan berlabel | **[ISI]** |
-| Jumlah penilai | **[ISI]** |
-| Akurasi persis | **[ISI]** |
-| Akurasi ±1 level | **[ISI]** |
-| Rata-rata selisih level | **[ISI]** |
-| Spearman $\rho$ | **[ISI]** |
-| Kesepakatan antar penilai | **[ISI]** |
+| Metrik | Batas awal (35/55/75) | Batas kalibrasi (38/66/92), *leave-one-out* | Batas kalibrasi, seluruh data* |
+|---|---|---|---|
+| Akurasi persis | 25% (5/20) | **55% (11/20)** | 70% (14/20) |
+| Akurasi ±1 level | 90% (18/20) | **95% (19/20)** | 95% (19/20) |
+| Rata-rata selisih level | 0,85 | **0,50** | 0,35 |
+| Spearman $\rho$ | 0,56 | 0,56 | 0,56 |
+
+\* Diukur pada data yang sama dengan data untuk memilih batas, sehingga terlalu optimistis. Angka yang dilaporkan sebagai perkiraan kinerja adalah kolom *leave-one-out*.
+
+Batas 38/66/92 terpilih pada 17 dari 20 putaran *leave-one-out*, sehingga cukup stabil. Spearman tidak berubah karena kalibrasi hanya memindahkan batas kategori, bukan urutan skor.
+
+Matriks kebingungan setelah kalibrasi (baris = label manusia, kolom = kategori aplikasi):
+
+| | Distant | Casual | Close | Very close |
+|---|---|---|---|---|
+| **Distant** | 1 | 2 | 0 | 0 |
+| **Casual** | 0 | 6 | 2 | 0 |
+| **Close** | 1 | 1 | 6 | 0 |
+| **Very close** | 0 | 0 | 0 | 1 |
+
+Temuan:
+
+1. **Sebelum kalibrasi, aplikasi menilai terlalu tinggi** (13 dari 20 percakapan lebih tinggi daripada label manusia). Batas awal yang dipilih tanpa data terlalu rendah.
+2. **Urutan skor searah dengan penilaian manusia** ($\rho$ = 0,56, korelasi positif sedang). Metrik perilaku menangkap sebagian, tetapi tidak seluruhnya, kedekatan yang dirasakan dari isi chat.
+3. **Percakapan bernada formal tetapi aktif** cenderung dinilai lebih dekat daripada kesan pembaca. Dua dari tiga percakapan berlabel Distant masuk kategori Casual, karena frekuensi dan kecepatan balasnya cukup tinggi meskipun nadanya berjarak.
+4. **Percakapan yang sangat pendek** (sekitar 10–12 pesan dalam satu hari) dapat memperoleh skor menengah. Komponen per hari aktif tidak memperhitungkan seberapa sedikit total data yang tersedia.
+5. **Batas Very close (92) hanya didukung satu percakapan**, sehingga paling rapuh dan perlu diuji ulang dengan data lebih banyak.
 
 ## 3.8 Pengujian Perangkat Lunak
 
