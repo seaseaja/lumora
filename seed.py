@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from database import create_db_and_tables, engine
 from models import (Arcana, ChatKeyword, ImlekDate, Service, ShioAnimal, TarotCard,
                     User, ZodiacSign)
+from patterns import DEFAULT_KEYWORDS, PREVIOUS_DEFAULTS
 from security import hash_password
 
 load_dotenv()
@@ -138,15 +139,9 @@ IMLEK = {
     2030: "2030-02-03",
 }
 
-# ---------------------------------------------------------------- kamus chat (starter)
-# Daftar awal buat demo. Kalibrasi pakai chat dummy dan cek ulang sitasi Gottman sebelum masuk laporan.
-KEYWORDS = [
-    ("criticism", "selalu,tidak pernah,kamu tuh,kenapa sih kamu,gak becus", "Gottman (Four Horsemen)", -2),
-    ("contempt", "bodoh,males ah,terserah lu,dasar,sok tau", "Gottman (Four Horsemen)", -3),
-    ("defensiveness", "bukan salah aku,kan kamu yang,aku udah bilang,lah kok aku", "Gottman (Four Horsemen)", -1),
-    ("stonewalling", "terserah,ya udah,hmm,gapapa,capek ngomong", "Gottman (Four Horsemen)", -1),
-    ("positive", "makasih,sayang,seneng,keren,bangga,mantap,kangen,hati-hati ya", "Rasio positif:negatif", 1),
-    ("negative", "kesel,benci,males,bete,capek,kecewa", "Rasio positif:negatif", -1),
+# ---------------------------------------------------------------- kamus chat
+# Kamus pola komunikasi (Gottman) ada di patterns.py supaya app dan seed memakai daftar yang sama.
+KEYWORDS = [(cat, kws, src, w) for cat, (kws, src, w) in DEFAULT_KEYWORDS.items()] + [
     ("excited", "wkwk,haha,yeay,wah,asik,gas,seru", "Heuristik excited", 1),
 ]
 
@@ -186,8 +181,13 @@ def main():
                 s.add(ImlekDate(year=year, new_year_date=date.fromisoformat(d)))
 
         for cat, kws, src, w in KEYWORDS:
-            if not s.exec(select(ChatKeyword).where(ChatKeyword.category == cat)).first():
+            row = s.exec(select(ChatKeyword).where(ChatKeyword.category == cat)).first()
+            if not row:
                 s.add(ChatKeyword(category=cat, keywords=kws, source=src, weight=w))
+            elif row.keywords == PREVIOUS_DEFAULTS.get(cat):
+                # Upgrade the untouched first-version list; edited lists are left as they are.
+                row.keywords = kws
+                s.add(row)
 
         s.commit()
     print("Seed selesai: admin, harga, 78 kartu tarot, 22 arcana, 12 zodiak, 12 shio, tanggal Imlek, kamus chat.")
