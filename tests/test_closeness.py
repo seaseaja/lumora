@@ -31,11 +31,12 @@ class ScaleAndLevelTests(unittest.TestCase):
 
     def test_level_boundaries(self):
         self.assertEqual(level_for(0)[0], "Distant")
-        self.assertEqual(level_for(34)[0], "Distant")
-        self.assertEqual(level_for(35)[0], "Casual")
-        self.assertEqual(level_for(55)[0], "Close")
-        self.assertEqual(level_for(74)[0], "Close")
-        self.assertEqual(level_for(75)[0], "Very close")
+        self.assertEqual(level_for(37)[0], "Distant")
+        self.assertEqual(level_for(38)[0], "Casual")
+        self.assertEqual(level_for(65)[0], "Casual")
+        self.assertEqual(level_for(66)[0], "Close")
+        self.assertEqual(level_for(91)[0], "Close")
+        self.assertEqual(level_for(92)[0], "Very close")
         self.assertEqual(level_for(100)[0], "Very close")
 
 
