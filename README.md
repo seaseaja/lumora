@@ -52,6 +52,22 @@ Importer mencocokkan nama file dengan nama kartu, memperbarui `image_url`, dan m
 
 Folder artwork saat ini dikecualikan dari Git karena PDF sumber hanya mengizinkan penggunaan pribadi. Jangan deploy gambar tersebut tanpa izin penggunaan website. Jika nanti memakai deck berlisensi untuk publikasi, hapus pola gambar dari `.gitignore`, commit artwork berlisensi, lalu jalankan importer pada database deployment. Hosting dengan filesystem sementara juga perlu penyimpanan persisten atau object storage agar gambar tidak hilang saat deploy.
 
+## Analisis chat: level kedekatan dan pola komunikasi
+
+Semua analisis ini **rule-based** (aturan dan kamus kata), bukan model machine learning yang dilatih. Isi pesan hanya diproses selama request; yang disimpan hanya angka dan alias.
+
+**Level kedekatan** (`closeness.py`): skor 0–100 dari enam komponen berbobot, yaitu frekuensi chat (25), konsistensi (15), keseimbangan pesan (20), kecepatan balas (20), siapa yang memulai chat (10), dan kata hangat (10). Hasilnya dibagi menjadi Distant (0–34), Casual (35–54), Close (55–74), dan Very close (75+). Tiap bulan juga diberi skor sendiri (bulan dengan kurang dari 20 pesan dilewati) untuk menentukan tren naik / stabil / turun, yang disimpan di `chat_sessions.interest_trend`. Aturan lengkapnya tampil di laporan pada panel *How is this score calculated?*. Batas dan bobotnya ditentukan manual dan perlu divalidasi.
+
+**Pola komunikasi** (`patterns.py`): menghitung per orang berapa pesan yang mengandung frasa criticism, contempt, defensiveness, stonewalling (Four Horsemen, Gottman), repair attempts, serta kata positif dan negatif. Sebuah pola diberi label *worth noticing* hanya jika muncul di minimal 3 pesan dan minimal 0,5 per 100 pesan. Ini bukan vonis tentang seseorang. Kamusnya dibaca dari tabel `chat_keywords`, jadi bisa diubah. `python seed.py` hanya memperbarui kamus yang isinya masih bawaan awal.
+
+**Test:**
+
+```powershell
+python -m unittest discover tests
+```
+
+**Validasi akurasi level kedekatan:** baca [colab/PANDUAN_LABEL.md](colab/PANDUAN_LABEL.md), taruh export chat di `sampel-chat/`, lalu jalankan `python colab/validate_closeness.py`. Run pertama membuat `colab/closeness_labels.csv` untuk diisi; run berikutnya menampilkan akurasi, korelasi Spearman, kesepakatan antar penilai, dan confusion matrix.
+
 ## Deploy: Vercel + Neon (dipakai sekarang)
 
 Production: https://lumora-mu-ruddy.vercel.app
