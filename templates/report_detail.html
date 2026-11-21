@@ -56,7 +56,7 @@
 
 {% if chat_chart.closeness %}{% set cl = chat_chart.closeness %}
 <section class="card chat-visual-card chat-closeness-card">
-  <div class="chat-visual-heading"><div><p class="eyebrow">CLOSENESS LEVEL</p><h2>{{ cl.level }}</h2></div><span>{{ cl.score }} / 100</span></div>
+  <div class="chat-visual-heading"><h2>Closeness: {{ cl.level }}</h2><span>{{ cl.score }} / 100</span></div>
   <p class="chat-overview-summary">{{ cl.description }}</p>
   <div class="chat-closeness-scale" role="img" aria-label="Closeness score {{ cl.score }} out of 100, level {{ cl.level }}">
     <div class="chat-bar-track"><span style="width:{{ cl.score }}%"></span></div>
@@ -78,6 +78,17 @@
     {% endfor %}</div>
     <small class="chat-insight-hint">Each month is scored on its own messages. Months with fewer than {{ mo.min_messages }} messages are shown as “–”.</small>
   </div>
+  {% endif %}
+  {% if cl.components and cl.components[0].rule %}
+  <details class="chat-closeness-method">
+    <summary>How is this score calculated?</summary>
+    <p>Each of the six parts above gets 0 to its maximum points; the score is their sum. Between the two limits for a part, points rise in a straight line. These limits are set by hand for this project, not learned from data.</p>
+    <table>
+      <thead><tr><th scope="col">Part</th><th scope="col">Max points</th><th scope="col">Rule</th></tr></thead>
+      <tbody>{% for part in cl.components %}<tr><th scope="row">{{ part.label }}</th><td>{{ part.weight }}</td><td>{{ part.rule }}</td></tr>{% endfor %}</tbody>
+    </table>
+    <p>Levels: {% for level in cl.levels|reverse %}{{ level.label }} {{ level.min }}+{{ ', ' if not loop.last }}{% endfor %}. Only the two most active participants are counted.</p>
+  </details>
   {% endif %}
   <p class="muted small">Rule-based score from message counts, timing, and keywords. It describes how this chat is used, not how two people feel about each other.</p>
 </section>
