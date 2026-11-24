@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Contact Us · Lumora{% endblock %}
+{% block content %}
+<section class="contact-hero">
+  <p class="eyebrow">CONTACT US</p>
+  <h1>Meet the Team</h1>
+  <p class="contact-lead">Lumora was built as a university final project. Replace the sample names and NIMs below with the actual project team before submission.</p>
+</section>
+
+<section class="contact-grid">
+  {% for member in team %}
+  <article class="contact-card">
+    <div class="contact-avatar">{{ member.name[:1]|upper }}</div>
+    <h3>{{ member.name }}</h3>
+    <p class="contact-nim">{{ member.nim }}</p>
+    <p class="contact-role">{{ member.role }}</p>
+    {% if member.email %}<p class="contact-email"><a href="mailto:{{ member.email }}">{{ member.email }}</a></p>{% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+<section class="home-section">
+  <h2>About This Project</h2>
+  <p>Lumora is a final exam project that integrates AI-based text analysis with a full-stack web application built on FastAPI, Jinja2, CSS, JavaScript, and PostgreSQL. The application analyzes WhatsApp chat exports using rule-based closeness scoring and Gottman-based communication pattern detection, with optional AI narrative generation through the Gemini or OpenAI API.</p>
+  <p>For questions, feedback, or collaboration inquiries, please reach out to any team member listed above.</p>
+</section>
+{% endblock %}

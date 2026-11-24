@@ -298,6 +298,29 @@ class ChatIndicatorScore(SQLModel, table=True):
     hit_count: int = 0
 
 
+class ClosenessPrediction(SQLModel, table=True):
+    """One row per chat upload: six features plus rule-based and Random Forest levels."""
+    __tablename__ = "closeness_predictions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    reading_id: int = Field(foreign_key="readings.id", unique=True, index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    my_alias: str = Field(max_length=50)
+    other_alias: str = Field(max_length=50)
+    total_messages: int = 0
+    frequency: float = 0
+    consistency: float = 0
+    balance: float = 0
+    reply: float = 0
+    initiative: float = 0
+    warmth: float = 0
+    rule_score: int = 0
+    rule_level: str = Field(max_length=20)
+    ml_level: Optional[str] = Field(default=None, max_length=20)
+    ml_confidence: Optional[float] = None
+    created_at: NaiveDatetime = Field(default_factory=utcnow)
+
+
 class ChatSignal(SQLModel, table=True):
     """Sinyal niat (opsional, AI): ada kutipan dan tingkat keyakinan, bukan vonis."""
     __tablename__ = "chat_signals"

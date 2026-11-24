@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}AI Predictions · Lumora{% endblock %}
+{% block content %}
+<p class="eyebrow">SAVED MODEL OUTPUT</p>
+<h1>Closeness predictions</h1>
+<p class="muted">Each row is one WhatsApp upload: the six model features, the rule-based score, and the Random Forest level stored in <code>closeness_predictions</code>.</p>
+{% if msg %}<p class="muted">{{ msg }}</p>{% endif %}
+<p><a class="btn" href="/chat">New prediction</a></p>
+<section class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>People</th>
+        <th>Messages</th>
+        <th>Rule</th>
+        <th>Random Forest output</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.created_at.strftime('%d %b %Y %H:%M') }}</td>
+        <td>{{ row.my_alias }} · {{ row.other_alias }}</td>
+        <td>{{ row.total_messages }}</td>
+        <td>{{ row.rule_level }} ({{ row.rule_score }})</td>
+        <td>{% if row.ml_level %}{{ row.ml_level }}{% if row.ml_confidence is not none %} ({{ (row.ml_confidence * 100)|round(0)|int }}% highest class probability){% endif %}{% else %}Model not trained{% endif %}</td>
+        <td>
+          <a href="/reports/{{ row.reading_id }}">Open</a>
+          <form method="post" action="/reports/{{ row.reading_id }}/delete" class="inline-delete" onsubmit="return confirm('Delete this prediction?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="reports-empty">
+          <b>No predictions yet</b>
+          <span class="muted">Upload a WhatsApp export to run the closeness model and store a row here.</span>
+          <a class="btn" href="/chat">Upload a chat</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

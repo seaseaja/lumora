@@ -1,12 +1,9 @@
-"""Rule-based closeness level for a two-person WhatsApp chat.
+"""Six communication signals scored 0..1, then weighted into a 0-100 closeness score.
 
-No trained model is involved: six communication signals are scored 0..1,
-weighted, and summed into a 0-100 score. Every threshold below is a heuristic
-chosen for this project. Use colab/validate_closeness.py to compare the
-scores with human labels before tuning them.
+The same six values are the feature vector for the Random Forest in closeness_ml.py.
+Thresholds below are heuristics; colab/validate_closeness.py compares them with human labels.
 
-`messages` everywhere is a list of (datetime, sender, body) sorted by time,
-already filtered to the two participants in `people`.
+`messages` is a list of (datetime, sender, body) sorted by time, already filtered to `people`.
 """
 
 import calendar
@@ -31,6 +28,7 @@ CLOSENESS_LEVELS = (  # (minimum score, label, description), highest first
     (0, "Distant", "Occasional or one-sided contact with slow replies."),
 )
 LEVEL_NAMES = [level[1] for level in reversed(CLOSENESS_LEVELS)]  # Distant .. Very close
+FEATURE_KEYS = ("frequency", "consistency", "balance", "reply", "initiative", "warmth")
 
 MIN_MESSAGES_PER_MONTH = 20  # fewer than this and a monthly score is mostly noise
 TREND_THRESHOLD = 8  # points of change between early and recent months that count as a trend
@@ -132,6 +130,12 @@ def compute_closeness(messages, people, span_days: int | None = None):
     return {"score": score, "level": label, "description": description,
             "levels": [{"min": level[0], "label": level[1]} for level in CLOSENESS_LEVELS],
             "components": components}
+
+
+def feature_vector(result: dict) -> list[float]:
+    """Return the six 0..1 component values in FEATURE_KEYS order."""
+    by_key = {part["key"]: part["value"] for part in result["components"]}
+    return [float(by_key[key]) for key in FEATURE_KEYS]
 
 
 def closeness_by_month(messages, people):

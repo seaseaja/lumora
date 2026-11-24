@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/static/style.css?v=20261121-kua-detail">
 <link rel="stylesheet" href="/static/motion.css?v=20261121-calm">
 <style>@view-transition{navigation:auto}</style>
-<link rel="stylesheet" href="/static/lumora.css?v=20261121-about">
+<link rel="stylesheet" href="/static/lumora.css?v=20261124-predictions">
 </head>
 <body>
 {% if user %}
@@ -24,11 +24,14 @@
     <div class="offcanvas-header d-lg-none"><h2 class="offcanvas-title" id="sidebarTitle">Menu</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button></div>
     <a class="brand" href="/dashboard">Lumora</a>
     <p class="side-label">MENU</p>
+    <a class="side-link" href="/home">Home</a>
     <a class="side-link" href="/dashboard">Dashboard</a>
     <p class="side-label">HISTORY</p>
     <a class="side-link" href="/reports">My Readings</a>
+    <a class="side-link" href="/predictions">AI Predictions</a>
     <a class="side-link" href="/orders">Payment History</a>
     {% if user.role == 'admin' %}<p class="side-label">MASTER</p><a class="side-link" href="/master/tarot">Tarot Cards</a><a class="side-link" href="/master/services">Services &amp; Prices</a><p class="side-label">REPORTS</p><a class="side-link" href="/admin/sales">Sales Report</a>{% endif %}
+    <a class="side-link" href="/contact">Contact Us</a>
     <p class="side-label">ACCOUNT</p>
     <a class="side-link" href="/profile">Profile</a>
     <a class="side-link" href="/about">About Lumora</a>
@@ -41,7 +44,8 @@
   {% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
   {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
   {% if not user %}<div class="auth-layout"><section class="auth-hero" data-sky="light">
-<a class="brand" href="/login">Lumora</a>
+<a class="brand" href="/home">Lumora</a>
+<nav class="auth-nav"><a href="/home">Home</a> <a href="/contact">Contact Us</a> <a href="/login">Log In</a></nav>
 <div class="auth-hero-copy">
 <p class="eyebrow">A LITTLE CLARITY, YOUR WAY</p>
 <h1>Stop overthinking.<br>Let’s analyze.</h1>

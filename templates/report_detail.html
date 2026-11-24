@@ -2,6 +2,10 @@
 {% block title %}Report · Lumora{% endblock %}
 {% block content %}
 <a class="back-link" href="/dashboard">&larr; Dashboard</a>
+<form method="post" action="/reports/{{ reading.id }}/delete" class="inline-delete" onsubmit="return confirm('Delete this report?');">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <button type="submit">Delete this report</button>
+</form>
 <p class="eyebrow">{{ reading.type|upper }} REPORT</p>
 <h1>{% if reading.type=='zodiac' %}Zodiac & Chinese Zodiac{% else %}{{ reading.title }}{% endif %}</h1>
 <p class="muted">{{ reading.created_at.strftime('%d %b %Y at %H:%M') }}</p>
@@ -91,6 +95,26 @@
   </details>
   {% endif %}
   <p class="muted small">Rule-based score from message counts, timing, and keywords. It describes how this chat is used, not how two people feel about each other.</p>
+</section>
+{% endif %}
+
+{% if chat_chart.ml_closeness %}{% set ml = chat_chart.ml_closeness %}
+<section class="card chat-visual-card">
+  <div class="chat-visual-heading"><h2>Random Forest level: {{ ml.level }}</h2><span>{{ (ml.confidence * 100)|round(0)|int }}% highest class probability</span></div>
+  <p class="chat-overview-summary">Trained classifier on the same six features as the score above. Saved as {{ ml.model_file }}. The displayed probability is not calibrated certainty; evaluation uses only 20 labelled chats.</p>
+  <table>
+    <thead><tr><th>Level</th><th>Probability</th></tr></thead>
+    <tbody>
+      {% for name, value in ml.probabilities.items() %}
+      <tr class="{{ 'is-notice' if name == ml.level }}"><th scope="row">{{ name }}</th><td>{{ (value * 100)|round(1) }}%</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<section class="card chat-visual-card">
+  <div class="chat-visual-heading"><h2>Trained classifier unavailable</h2></div>
+  <p class="chat-overview-summary">This report includes the rule-based closeness score. Train and install the Random Forest artifact to add its prediction.</p>
 </section>
 {% endif %}
 

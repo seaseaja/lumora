@@ -1,0 +1,86 @@
+{
+  "algorithm": "RandomForestClassifier",
+  "n_estimators": 160,
+  "features": [
+    "frequency",
+    "consistency",
+    "balance",
+    "reply",
+    "initiative",
+    "warmth"
+  ],
+  "classes": [
+    "Casual",
+    "Close",
+    "Distant",
+    "Very close"
+  ],
+  "n_rows": 20,
+  "n_train": 15,
+  "n_test": 5,
+  "label_counts": {
+    "Close": 8,
+    "Distant": 3,
+    "Very close": 1,
+    "Casual": 8
+  },
+  "accuracy": 0.4,
+  "precision_macro": 0.333,
+  "recall_macro": 0.5,
+  "f1_macro": 0.389,
+  "confusion_matrix": {
+    "labels": [
+      "Distant",
+      "Casual",
+      "Close"
+    ],
+    "rows": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ]
+  },
+  "per_class": {
+    "Distant": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.667,
+      "support": 1
+    },
+    "Casual": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 2
+    },
+    "Close": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "support": 2
+    }
+  },
+  "feature_importances": {
+    "frequency": 0.329,
+    "consistency": 0.243,
+    "balance": 0.09,
+    "reply": 0.024,
+    "initiative": 0.186,
+    "warmth": 0.128
+  },
+  "test_split": 0.25,
+  "random_state": 42,
+  "evaluation_note": "Metrics use only held-out human-labelled chats. Classes with one sample are retained in training and are not represented in test metrics."
+}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Home · Lumora{% endblock %}
+{% block content %}
+<section class="home-hero">
+  <p class="eyebrow">WELCOME TO LUMORA</p>
+  <h1>Understand your conversations, reflect on your path</h1>
+  <p class="home-lead">Lumora is a web application that combines rule-based text analysis and AI to help you explore communication patterns in WhatsApp chats, draw reflective tarot readings, calculate your Destiny Matrix, and discover your Zodiac and Chinese Zodiac profile.</p>
+  <div class="home-actions">
+    <a class="btn btn-primary" href="/register">Get Started</a>
+    <a class="btn btn-outline-secondary" href="/login">Log In</a>
+  </div>
+</section>
+
+<section class="home-section">
+  <h2>Purpose</h2>
+  <p>Lumora was built as a final project to demonstrate the integration of AI processing with a full-stack web application. It serves two goals:</p>
+  <ul>
+    <li><strong>Practical:</strong> give users a private, easy way to upload a WhatsApp export and receive a structured communication report covering message balance, reply speed, closeness level, Gottman-based communication patterns, and an optional AI-generated narrative.</li>
+    <li><strong>Academic:</strong> show a working pipeline from raw data preprocessing through rule-based scoring and external AI calls to a database-backed CRUD interface, all inside a single FastAPI application.</li>
+  </ul>
+</section>
+
+<section class="home-section">
+  <h2>Dataset</h2>
+  <p>The primary dataset consists of <strong>anonymized WhatsApp chat exports</strong> collected from 20 volunteer conversations (with informed consent). Each export is a plain-text file containing timestamped messages from two participants.</p>
+  <table class="table table-sm">
+    <thead><tr><th>Property</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Source</td><td>WhatsApp "Export Chat" feature (without media)</td></tr>
+      <tr><td>Sample size</td><td>20 conversations, used for closeness-level calibration</td></tr>
+      <tr><td>Format</td><td>Plain text (.txt) or ZIP containing one .txt, UTF-8 or UTF-16</td></tr>
+      <tr><td>Preprocessing</td><td>Regex parsing of timestamps and senders, date-order detection (DD/MM vs MM/DD), sender frequency filtering to two main participants, media-placeholder detection, 6-hour session-gap rule</td></tr>
+      <tr><td>Privacy</td><td>Raw message text is processed only during the request and never stored. The database keeps statistical counts, aliases, and report JSON only.</td></tr>
+    </tbody>
+  </table>
+  <p>A Google Colab notebook (<code>colab/lumora_dataset_colab.ipynb</code>) provides interactive exploratory data analysis with charts for message balance, conversation intensity, reply rhythm, topic signals, and tone keyword signals across all sample conversations.</p>
+</section>
+
+<section class="home-section">
+  <h2>AI Models</h2>
+
+  <article class="home-model-card">
+    <h3>1. Random Forest closeness classifier (Soal 1)</h3>
+    <p>File: <code>train_closeness.py</code>, saved model: <code>artifacts/closeness_rf.joblib</code>, loader: <code>closeness_ml.py</code></p>
+    <p>The model uses six numeric features: message frequency, consistency, balance, reply speed, conversation initiator, and warm wording. A Random Forest predicts Distant, Casual, Close, or Very close. It handles these bounded numeric features without standardization and exposes feature importance for interpretation.</p>
+    <p>Preprocessing parses WhatsApp exports, keeps the two most active senders, excludes media placeholders from text signals, treats a 6-hour gap as a new conversation, and scales each signal to 0..1. Training reads only human-labelled exports from <code>sampel-chat/</code> and <code>colab/closeness_labels.csv</code>; the script does not create synthetic labels. It reserves 25% for a held-out evaluation where the label counts allow it. Labels with only one example stay in training and cannot be measured in the test set.</p>
+    {% if model_metrics %}
+    <p><strong>Held-out test metrics</strong> (n_test = {{ model_metrics.n_test }}, from {{ model_metrics.n_rows }} human-labelled chats):</p>
+    <table class="table table-sm">
+      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>{{ model_metrics.accuracy }}</td></tr>
+        <tr><td>Precision (macro)</td><td>{{ model_metrics.precision_macro }}</td></tr>
+        <tr><td>Recall (macro)</td><td>{{ model_metrics.recall_macro }}</td></tr>
+        <tr><td>F1 (macro)</td><td>{{ model_metrics.f1_macro }}</td></tr>
+      </tbody>
+    </table>
+    <p>Label counts: {% for label, count in model_metrics.label_counts.items() %}{{ label }} {{ count }}{% if not loop.last %}; {% endif %}{% endfor %}.</p>
+    <p class="muted">{{ model_metrics.evaluation_note }}</p>
+    <p>Confusion matrix (rows = true label, columns = predicted):</p>
+    <table class="table table-sm">
+      <thead>
+        <tr><th></th>{% for name in model_metrics.confusion_matrix.labels %}<th>{{ name }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for row in model_metrics.confusion_matrix.rows %}
+        <tr>
+          <th>{{ model_metrics.confusion_matrix.labels[loop.index0] }}</th>
+          {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>Feature importances:
+      {% for key, value in model_metrics.feature_importances.items() %}
+      {{ key }} {{ value }}{% if not loop.last %}; {% endif %}
+      {% endfor %}
+    </p>
+    {% else %}
+    <p>No trained model artifact is installed yet. After dependencies are installed and the labelled exports are available, run <code>python train_closeness.py</code>; this saves the model and its holdout metrics under <code>artifacts/</code>.</p>
+    {% endif %}
+  </article>
+
+  <article class="home-model-card">
+    <h3>2. Rule-Based Closeness Scoring</h3>
+    <p>File: <code>closeness.py</code></p>
+    <p>A weighted-sum model that scores 0–100 how closely two people communicate, using six signals:</p>
+    <table class="table table-sm">
+      <thead><tr><th>Signal</th><th>Weight</th><th>Measurement</th></tr></thead>
+      <tbody>
+        <tr><td>Chat frequency</td><td>25</td><td>Messages per active day, scaled 5–60</td></tr>
+        <tr><td>Consistency</td><td>15</td><td>Share of days with at least one message, scaled 5%–70%</td></tr>
+        <tr><td>Message balance</td><td>20</td><td>Share of messages from the quieter person, scaled 15%–45%</td></tr>
+        <tr><td>Reply speed</td><td>20</td><td>Median reply time, scaled 2 min–3 hr (inverted)</td></tr>
+        <tr><td>Who starts chats</td><td>10</td><td>Share of conversations opened by the less frequent starter, scaled 10%–40%</td></tr>
+        <tr><td>Warm wording</td><td>10</td><td>Share of text messages with warm words or laughter, scaled 2%–15%</td></tr>
+      </tbody>
+    </table>
+    <p>The score maps to four levels: Distant (0–37), Casual (38–65), Close (66–91), Very close (92+). Monthly scores are computed separately; a rising/steady/falling trend is derived by comparing the earliest and latest thirds. Thresholds were calibrated using leave-one-out validation on 20 human-labelled sample chats.</p>
+    <p><strong>Evaluation:</strong> <code>colab/validate_closeness.py</code> produces accuracy, Spearman rank correlation, inter-rater agreement (Cohen's kappa), and a confusion matrix comparing predicted levels against human labels.</p>
+  </article>
+
+  <article class="home-model-card">
+    <h3>3. Gottman Communication Pattern Detection</h3>
+    <p>File: <code>patterns.py</code></p>
+    <p>Counts, per person, how many text messages contain phrases from seven keyword categories based on Gottman's research:</p>
+    <ul>
+      <li><strong>Four Horsemen:</strong> criticism, contempt, defensiveness, stonewalling</li>
+      <li><strong>Repair attempts:</strong> apologies and calming phrases</li>
+      <li><strong>Positive and negative wording:</strong> thanks, affection vs. annoyance, disappointment</li>
+    </ul>
+    <p>Matching uses whole-word regex compiled from a configurable keyword dictionary stored in the <code>chat_keywords</code> database table. A category is flagged as "worth noticing" only when it appears in at least 3 messages and at a rate of at least 0.5 per 100 text messages. The positive-to-negative ratio is reported for each participant.</p>
+  </article>
+
+  <article class="home-model-card">
+    <h3>4. AI Narrative Generation (Optional)</h3>
+    <p>When a user opts in, Lumora sends anonymized statistical summaries and a small sample of message excerpts to an external LLM (Gemini or OpenAI-compatible API) to generate a structured narrative covering overview, topic observations, connections between metrics and content, monthly notes, strengths, and cautions.</p>
+    <p>The same AI pipeline powers Tarot spread selection, preview text, full reading interpretation, and follow-up answers. The model is configurable via environment variables (<code>OPENAI_MODEL</code>, <code>OPENAI_BASE_URL</code>).</p>
+  </article>
+</section>
+
+<section class="home-section">
+  <h2>Technology Stack</h2>
+  <table class="table table-sm">
+    <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Python, FastAPI, Uvicorn</td></tr>
+      <tr><td>Templating</td><td>Jinja2</td></tr>
+      <tr><td>Frontend</td><td>HTML5, CSS3 (custom + Bootstrap 5), vanilla JavaScript</td></tr>
+      <tr><td>Database</td><td>PostgreSQL (Neon) via SQLModel / SQLAlchemy, psycopg2</td></tr>
+      <tr><td>Trained model</td><td>scikit-learn Random Forest (<code>artifacts/closeness_rf.joblib</code>)</td></tr>
+      <tr><td>AI Provider</td><td>Gemini API or OpenAI Responses API (optional narrative, not the Soal 1 model)</td></tr>
+      <tr><td>Deployment</td><td>Vercel (serverless) + Neon (managed PostgreSQL)</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}

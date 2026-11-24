@@ -21,14 +21,15 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from starlette.middleware.sessions import SessionMiddleware
 
-from closeness import closeness_by_month, compute_closeness
+from closeness import FEATURE_KEYS, closeness_by_month, compute_closeness, feature_vector
+from closeness_ml import load_metrics, predict_closeness
 from database import create_db_and_tables, get_session
 from models import ChatKeyword
 from patterns import build_dictionary, count_patterns
 from lunar_new_year import lunar_new_year
-from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ImlekDate, MatrixReading, Order, Payment,
-                    Reading, Service, ShioAnimal, TarotCard, TarotDraw, User, UserAvatar, ZodiacReading,
-                    ZodiacSign, utcnow)
+from models import (Arcana, ChatIndicatorScore, ChatPersonStat, ChatSignal, ChatSession, ClosenessPrediction,
+                    ImlekDate, MatrixReading, Order, Payment, Reading, Service, ShioAnimal, TarotCard, TarotDraw,
+                    User, UserAvatar, ZodiacReading, ZodiacSign, utcnow)
 from security import audit, csrf_token, hash_password, verify_csrf, verify_password
 
 load_dotenv()
@@ -109,7 +110,22 @@ def require_admin(user=Depends(require_user)):
 # ---------- auth ----------
 @app.get("/")
 def index(user=Depends(get_user)):
-    return RedirectResponse("/dashboard" if user else "/login", status_code=303)
+    return RedirectResponse("/dashboard" if user else "/home", status_code=303)
+
+
+@app.get("/home")
+def home_page(request: Request, user=Depends(get_user)):
+    return render(request, "home.html", user=user, model_metrics=load_metrics())
+
+
+@app.get("/contact")
+def contact_page(request: Request, user=Depends(get_user)):
+    team = [
+        {"name": "Gwynevere", "nim": "NIM", "role": "Full-Stack Developer & AI Integration", "email": ""},
+        {"name": "Anggota 2", "nim": "NIM", "role": "Frontend & UI Design", "email": ""},
+        {"name": "Anggota 3", "nim": "NIM", "role": "Data Preprocessing & Testing", "email": ""},
+    ]
+    return render(request, "contact.html", user=user, team=team)
 
 
 @app.get("/register")
@@ -1494,6 +1510,7 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
     ]
     chart_data["closeness"] = compute_closeness(relevant, people)
     chart_data["closeness"]["monthly"] = closeness_by_month(relevant, people)
+    chart_data["ml_closeness"] = predict_closeness(chart_data["closeness"])
     keyword_rows = session.exec(select(ChatKeyword.category, ChatKeyword.keywords)
                                 .where(ChatKeyword.is_active == True)).all()  # noqa: E712
     patterns = count_patterns(relevant, people, build_dictionary(keyword_rows))
@@ -1529,12 +1546,33 @@ async def chat_analyze(request: Request, chat_file: UploadFile=File(...), my_ali
         for category in row["categories"]:
             session.add(ChatIndicatorScore(chat_session_id=chat.id, person="me" if index == 0 else "other",
                                            category=category["key"], hit_count=category["count"]))
+    ml = chart_data.get("ml_closeness") or {}
+    feats = ml.get("features") or dict(zip(FEATURE_KEYS, feature_vector(chart_data["closeness"])))
+    session.add(ClosenessPrediction(
+        reading_id=reading.id, user_id=user.id, my_alias=my_alias, other_alias=other_alias,
+        total_messages=len(relevant),
+        frequency=feats.get("frequency", 0), consistency=feats.get("consistency", 0),
+        balance=feats.get("balance", 0), reply=feats.get("reply", 0),
+        initiative=feats.get("initiative", 0), warmth=feats.get("warmth", 0),
+        rule_score=chart_data["closeness"]["score"], rule_level=chart_data["closeness"]["level"],
+        ml_level=ml.get("level"),
+        ml_confidence=ml.get("confidence"),
+    ))
     session.commit()
     audit(session, "chat_analyzed", detail=f"reading_id={reading.id}; messages={len(relevant)}", user_id=user.id, request=request)
     raw = ""
     messages.clear()
     relevant.clear()
     return RedirectResponse(f"/reports/{reading.id}", status_code=303)
+
+
+@app.get("/predictions")
+def predictions_page(request: Request, user=Depends(require_user), session: Session = Depends(get_session)):
+    rows = session.exec(
+        select(ClosenessPrediction).where(ClosenessPrediction.user_id == user.id)
+        .order_by(ClosenessPrediction.created_at.desc())
+    ).all()
+    return render(request, "predictions.html", user=user, rows=rows, msg=request.query_params.get("msg"))
 
 
 @app.get("/reports")
@@ -1549,6 +1587,9 @@ def report_delete(request: Request, reading_id: int, user=Depends(require_user),
     if not reading or reading.user_id != user.id:
         raise HTTPException(status_code=404)
     # Remove child rows first (FK order). Orders/payments are kept as transaction records.
+    prediction = session.exec(select(ClosenessPrediction).where(ClosenessPrediction.reading_id == reading.id)).first()
+    if prediction:
+        session.delete(prediction)
     chat = session.exec(select(ChatSession).where(ChatSession.reading_id == reading.id)).first()
     if chat:
         for model in (ChatPersonStat, ChatIndicatorScore, ChatSignal):
